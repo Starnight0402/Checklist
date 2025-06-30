@@ -1,0 +1,134 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Third Wave Coffee – Training Audit</title>
+  <script src="https://cdn.tailwindcss.com/3.4.4"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/pipwerks-scorm-api-wrapper@1.1.20220410/dist/pipwerks-scorm-api-wrapper.min.js"></script>
+  <style>
+    input[type="checkbox"]:focus { outline: 2px solid #6366f1; outline-offset: 1px; }
+  </style>
+  <script>
+    // fallback for SCORM
+    (() => {
+      if (!window.API) {
+        window.API = {
+          LMSInitialize: () => true,
+          LMSFinish: () => true,
+          LMSSetValue: () => true,
+          LMSGetValue: () => '',
+          LMSCommit: () => true,
+          LMSGetLastError: () => 0,
+          LMSGetErrorString: () => 'No error',
+          LMSGetDiagnostic: () => ''
+        };
+      }
+    })();
+  </script>
+  <script>
+    // Inject full checklist data
+    window.CHECKLIST = {"name": "Training Audit Checklist", "version": "1.0", "sections": [{"id": "Training Materials", "title": "Training Materials", "items": [{"id": "Training Materials_1", "question": "FRM", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_2", "question": "BRM", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_3", "question": "One-pager \u2013 Hot/Cue Cards", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_4", "question": "One-pager \u2013 Cold/Cue Cards", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_5", "question": "Dial-in One-pager", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_6", "question": "New Launch Learning Material", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_7", "question": "COFFEE Playbook", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_8", "question": "Shelf Life Chart", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Training Materials_9", "question": "Career Progression Chart", "weight": 1, "allow_na": true, "photo_upload": true}]}, {"id": "Learning Management System (LMS) Usage", "title": "Learning Management System (LMS) Usage", "items": [{"id": "Learning Management System (LMS) Usage_1", "question": "Has Orientation & Induction been completed within 3 days of joining?", "weight": 4, "allow_na": true, "photo_upload": true}, {"id": "Learning Management System (LMS) Usage_2", "question": "Are all assessments and knowledge checks completed using LMS?", "weight": 4, "allow_na": true, "photo_upload": true}, {"id": "Learning Management System (LMS) Usage_3", "question": "Is the team using LMS to stay updated on new information and communications?", "weight": 2, "allow_na": true, "photo_upload": true}]}, {"id": "Buddy Trainer Availability & Capability", "title": "Buddy Trainer Availability & Capability", "items": [{"id": "Buddy Trainer Availability & Capability_1", "question": "Does the caf\u00e9 have at least 2 certified Buddy Trainers?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Buddy Trainer Availability & Capability_2", "question": "Have Buddy Trainers completed their Skill Check?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Buddy Trainer Availability & Capability_3", "question": "Are trainees rostered with Buddy Trainers and working in the same shift?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Buddy Trainer Availability & Capability_4", "question": "Have Buddy Trainers attended the BT workshop?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Buddy Trainer Availability & Capability_5", "question": "Can Buddy Trainers explain the 4-step training process effectively?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Buddy Trainer Availability & Capability_6", "question": "Can Buddy Trainers navigate Zing LMS flawlessly?", "weight": 1, "allow_na": true, "photo_upload": true}]}, {"id": "New Joiner Training & Training Records", "title": "New Joiner Training & Training Records", "items": [{"id": "New Joiner Training & Training Records_1", "question": "Is the OJT (On-Job Training) book available for all partners?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "New Joiner Training & Training Records_2", "question": "Are trainees referring to the OJT book and completing their skill checks with the Store Manager?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "New Joiner Training & Training Records_3", "question": "Is training progression aligned with the Training Calendar/Plan?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "New Joiner Training & Training Records_4", "question": "Are team members aware of post-barista training progressions?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "New Joiner Training & Training Records_5", "question": "Have managers completed SHLP training as per the calendar?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "New Joiner Training & Training Records_6", "question": "Are there at least 2 FOSTAC-certified managers in the store?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "New Joiner Training & Training Records_7", "question": "Is ASM/SM training completed as per the Training Calendar?", "weight": 2, "allow_na": true, "photo_upload": true}]}, {"id": "Partner Knowledge", "title": "Partner Knowledge", "items": [{"id": "Partner Knowledge_1", "question": "Are team members aware of current company communication?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Partner Knowledge_2", "question": "Ask a team member to conduct a Coffee Tastin & a Sampling", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Partner Knowledge_3", "question": "Is Sampling being conducted as per the set guidelines?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Partner Knowledge_4", "question": "Is Coffee Tasting engaging and effective?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Partner Knowledge_5", "question": "Are team members aware of manual brewing methods and standards?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Partner Knowledge_6", "question": "Are partners following grooming standards?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Partner Knowledge_7", "question": "Ask questions about key topics: COFFEE, LEAST, ROAST, Dial-in, Milk Steaming, LTO, Values(RESPECT), MSDS, Chemcial Dilution, Food Safety, and Security.", "weight": 3, "allow_na": true, "photo_upload": true}]}, {"id": "TSA - Training Skill Assessment", "title": "TSA - Training Skill Assessment", "items": []}, {"id": "Customer Experience", "title": "Customer Experience", "items": [{"id": "Customer Experience_1", "question": "Is appropriate background music playing at the appropriate volume?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_2", "question": "Is the store temperature comfortable?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_3", "question": "Are the washrooms clean and well-maintained?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_4", "question": "Is WiFi available and functioning properly?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_5", "question": "Are marketing elements and  displays (Merchandise rack and FDU) displayed appropriately as per VM guide?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_6", "question": "Is the store furniture clean and well-kept?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_7", "question": "- What do you understand by MA, CPI, Google, HD, QA, and App Feedback Scores?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_8", "question": "- What was the latest Mystery Audit score for the store?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Customer Experience_9", "question": "- What were the top two opportunity areas in Customer Experience (last month)? (1 Mark - No partial marks)", "weight": 1, "allow_na": true, "photo_upload": true}]}, {"id": "Action Plan & Continuous Improvement", "title": "Action Plan & Continuous Improvement", "items": [{"id": "Action Plan & Continuous Improvement_1", "question": "Have concerns from the action plan been addressed or are they in progress?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "Action Plan & Continuous Improvement_2", "question": "Are all managers aware of the action plan and necessary actions?", "weight": 3, "allow_na": true, "photo_upload": true}]}]};
+  </script>
+</head>
+<body class="bg-gray-100 min-h-screen flex justify-center p-6">
+  <div id="root" class="w-full max-w-5xl"></div>
+  <script>
+    const { useState } = React;
+    const checklist = window.CHECKLIST;
+    const params = new URLSearchParams(window.location.search);
+    const metadata = {
+      name: params.get('name') || '',
+      id: params.get('id') || '',
+      designation: params.get('designation') || '',
+      subfunction: params.get('subfunction') || ''
+    };
+
+
+    function initResponses() {
+      const r = {};
+      checklist.sections.forEach(sec => {
+        sec.items.forEach(it => {
+          r[it.id] = { score: 0, na: false, photo: null };
+        });
+      });
+      return r;
+    }
+
+    function App() {
+      const [responses, setResponses] = useState(initResponses());
+      const update = (id, patch) => setResponses(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+      const submit = () => {
+        if (!pipwerks.SCORM.get('cmi.core.lesson_status')) pipwerks.SCORM.init();
+        pipwerks.SCORM.set('cmi.suspend_data', JSON.stringify(responses));
+        pipwerks.SCORM.set('cmi.core.lesson_status', 'completed');
+        pipwerks.SCORM.save(); pipwerks.SCORM.quit();
+        alert('Audit saved ✔️');
+      };
+
+      return React.createElement(
+        'form',
+        { onSubmit: e => { e.preventDefault(); submit(); }, className: 'space-y-8' },
+        React.createElement('header', { className: 'text-center' },
+          React.createElement('h1', { className: 'text-3xl font-bold' }, checklist.name),
+          React.createElement('p', { className: 'text-sm text-gray-500' }, 'v' + checklist.version),
+        React.createElement('div', { className: 'text-sm text-gray-600 mb-4 text-center' },
+          'Auditor: ' + metadata.name + ' | ID: ' + metadata.id + ' | ' + metadata.designation + ' – ' + metadata.subfunction
+        ),
+
+        ),
+        ...checklist.sections.map(sec =>
+          React.createElement('section', { key: sec.id, className: 'bg-white border rounded-2xl p-6' },
+            React.createElement('h2', { className: 'text-xl font-semibold mb-4' }, sec.title),
+            ...sec.items.map(item => {
+              const r = responses[item.id];
+              return React.createElement('div', {
+                key: item.id, className: 'grid gap-4 md:grid-cols-[auto,1fr] items-center mb-4'
+              },
+                React.createElement('label', { className: 'font-medium', htmlFor: 'item-' + item.id }, item.question),
+                React.createElement('div', { className: 'flex flex-col gap-2 md:flex-row md:items-center' },
+                  React.createElement('div', { className: 'flex gap-4' },
+                    React.createElement('label', { className: 'inline-flex items-center gap-1 text-sm' },
+                      React.createElement('input', {
+                        type: 'radio', name: item.id, checked: r.score === item.weight,
+                        onChange: () => update(item.id, { score: item.weight, na: false }),
+                        disabled: r.na
+                      }), 'Yes'),
+                    React.createElement('label', { className: 'inline-flex items-center gap-1 text-sm' },
+                      React.createElement('input', {
+                        type: 'radio', name: item.id, checked: r.score === 0,
+                        onChange: () => update(item.id, { score: 0, na: false }),
+                        disabled: r.na
+                      }), 'No')
+                  ),
+                  item.allow_na && React.createElement('label', { className: 'inline-flex items-center text-sm gap-1' },
+                    React.createElement('input', {
+                      type: 'checkbox', checked: r.na,
+                      onChange: e => update(item.id, { na: e.target.checked, score: null }),
+                      className: 'h-4 w-4 text-indigo-600'
+                    }), 'NA'
+                  ),
+                  item.photo_upload && React.createElement('input', {
+                    type: 'file', accept: 'image/*', disabled: r.na,
+                    onChange: e => update(item.id, { photo: e.target.files[0] || null }),
+                    className: 'text-sm'
+                  })
+                )
+              );
+            })
+          )
+        ),
+        React.createElement('button', {
+          type: 'submit',
+          className: 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl w-full md:w-auto'
+        }, 'Submit Audit')
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  </script>
+</body>
+</html>
