@@ -18,13 +18,15 @@
     body { background: #f3f4f6; font-family: sans-serif; margin: 0; }
     .container { max-width: 800px; margin: 2rem auto; background: white; padding: 1rem; border-radius: 0.5rem; }
     .title { text-align: center; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
+    .grid { display: grid; gap: 1rem; }
+    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
     table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
     th, td { border: 1px solid #e5e7eb; padding: 0.5rem; }
     th { background-color: #e5e7eb; }
     input[type="radio"] { margin-right: 0.25rem; }
     input[type="file"] { margin-top: 0.5rem; }
     .section { margin-bottom: 2rem; }
-    .section h2 { margin-bottom: 0.5rem; }
+    .section h2 { margin-bottom: 0.5rem; font-weight: 600; }
     .submit-btn { background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.375rem; cursor: pointer; }
   </style>
 </head>
@@ -34,8 +36,8 @@
   <script>
     // Checklist data
     window.CHECKLIST = {
-      "name":"Third Wave Coffee | Training Audit","version":"1.0",
-      "sections":[
+      "name":"Training Audit Checklist","version":"1.0",
+      "sections":[ /* full sections JSON as before */
         {"id":"Training Materials","title":"Training Materials","items":[
           {"id":"TM_1","question":"FRM available at store?","weight":1},
           {"id":"TM_2","question":"BRM available at store?","weight":1},
@@ -130,85 +132,119 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // PDF header gradient & title
+        // Header gradient + dynamic title
         doc.setFillColor(79,70,229);
-        doc.rect(0,0,doc.internal.pageSize.getWidth(),20,'F');
+        doc.rect(0, 0, doc.internal.pageSize.getWidth(), 25, 'F');
         doc.setTextColor(255,255,255);
-        doc.setFontSize(16);
-        doc.text("Third Wave Coffee | Training Audit", doc.internal.pageSize.getWidth()/2,14,{align:"center"});
+        doc.setFontSize(18);
+        doc.text(`Training audit report | ${storeName}`, doc.internal.pageSize.getWidth()/2, 15, { align: "center" });
 
-        // compute scores
-        let totalScore=0, maxScore=0;
-        const rows=[];
-        window.CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{
-          const r=resp[it.id];
-          const ans = r.na?"NA":(r.score===it.weight?"Yes":"No");
-          rows.push([sec.title,it.question,ans]);
-          if(!r.na&&r.score!=null){totalScore+=r.score;maxScore+=it.weight;}  
+        // Details table
+        const details = [
+          { field: 'Store Name', value: storeName },
+          { field: 'Store ID', value: storeId },
+          { field: 'Auditor Name', value: auditor.name },
+          { field: 'Auditor ID', value: auditor.id }
+        ];
+        let totalScore = 0, maxScore = 0;
+        const rows = [];
+        window.CHECKLIST.sections.forEach(sec => sec.items.forEach(it => {
+          const r = resp[it.id];
+          const ans = r.na ? 'NA' : (r.score === it.weight ? 'Yes' : 'No');
+          rows.push([sec.title, it.question, ans]);
+          if (!r.na && r.score != null) { totalScore += r.score; maxScore += it.weight; }
         }));
-        const percentage=maxScore?Math.round(100*totalScore/maxScore):0;
+        const percentage = maxScore ? Math.round(100 * totalScore / maxScore) : 0;
+        details.push({ field: 'Score', value: `${totalScore}/${maxScore}` });
+        details.push({ field: 'Percentage', value: `${percentage}%` });
 
-        // score box top
-        doc.setFillColor(245,245,245);
-        doc.rect(10,25,60,15,'F');
-        doc.setTextColor(0);
-        doc.setFontSize(10);
-        doc.text(`Score: ${totalScore}/${maxScore}`,12,34);
-        doc.text(`(${percentage}%)`,12,40);
+        doc.autoTable({
+          startY: 30,
+          theme: 'grid',
+          head: [['Field','Value']],
+          body: details.map(d => [d.field, d.value]),
+          styles: { fontSize: 10 },
+          headStyles: { fillColor: [230,230,230], textColor: 0 }
+        });
+        const endY = doc.lastAutoTable.finalY + 5;
 
-        doc.autoTable({head:[["Section","Question","Response"]],body:rows,startY:45,styles:{fontSize:8}});
+        // Main responses table with colored answers and correct didParseCell
+        doc.autoTable({
+          startY: endY,
+          head: [['Section','Question','Response']],
+          body: rows,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [79,70,229], textColor: 255 },
+          didParseCell: function(data) {
+            if (data.section === 'body' && data.column.index === 2) {
+              const txt = data.cell.text[0];
+              if (txt === 'Yes') data.cell.styles.textColor = [0,128,0];
+              if (txt === 'No') data.cell.styles.textColor = [255,0,0];
+              if (txt === 'NA') data.cell.styles.textColor = [255,165,0];
+            }
+          }
+        });
 
-        // log
-        fetch(LOG_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({storeName,storeId,auditorName:auditor.name,auditorId:auditor.id,score:totalScore,percentage})});
-
+        // Log and save
+        fetch(LOG_ENDPOINT, {
+          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storeName, storeId, auditorName: auditor.name, auditorId: auditor.id, score: totalScore, percentage })
+        });
         doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
         localStorage.removeItem(KEY);
       };
 
       return React.createElement(
-        'div',{className:'container'},
-        React.createElement('h1',{className:'title'},window.CHECKLIST.name),
-        React.createElement('form',{onSubmit:handleSubmit},
-          React.createElement('div',{className:'grid grid-cols-2 gap-4 mb-4'},
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),
-              React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})
+        'div', { className: 'container' },
+        React.createElement('h1', { className: 'title' }, window.CHECKLIST.name),
+        React.createElement('form', { onSubmit: handleSubmit },
+          React.createElement('div', { className: 'grid grid-cols-2 mb-4' },
+            React.createElement('div', null,
+              React.createElement('label', { className: 'block font-medium mb-1' }, 'Auditor Name'),
+              React.createElement('input', { type: 'text', value: auditor.name, readOnly: true, className: 'w-full p-2 border rounded' })
             ),
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),
-              React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'})
+            React.createElement('div', null,
+              React.createElement('label', { className: 'block font-medium mb-1' }, 'Auditor ID'),
+              React.createElement('input', { type: 'text', value: auditor.id, readOnly: true, className: 'w-full p-2 border rounded' })
             )
           ),
-          React.createElement('div',{className:'grid grid-cols-2 gap-4 mb-6'},
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),
-              React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})
+          React.createElement('div', { className: 'grid grid-cols-2 mb-6' },
+            React.createElement('div', null,
+              React.createElement('label', { className: 'block font-medium mb-1' }, 'Store Name'),
+              React.createElement('input', { type: 'text', value: storeName, onChange: e => setStoreName(e.target.value), required: true, className: 'w-full p-2 border rounded' })
             ),
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),
-              React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'})
+            React.createElement('div', null,
+              React.createElement('label', { className: 'block font-medium mb-1' }, 'Store ID'),
+              React.createElement('input', { type: 'text', value: storeId, onChange: e => setStoreId(e.target.value), required: true, className: 'w-full p-2 border rounded' })
             )
           ),
-          window.CHECKLIST.sections.map(sec=>React.createElement(
-            'div',{key:sec.id,className:'section'},
-            React.createElement('h2',null,sec.title),
-            React.createElement('table',null,
-              React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),
-              React.createElement('tbody',null,
-                sec.items.map(it=>{
-                  const r=resp[it.id];
-                  return React.createElement('tr',{key:it.id},
-                    React.createElement('td',null,it.question),
-                    React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),
-                    React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),
-                    React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})}))
+          window.CHECKLIST.sections.map(sec => React.createElement(
+            'div', { key: sec.id, className: 'section' },
+            React.createElement('h2', null, sec.title),
+            React.createElement('table', null,
+              React.createElement('thead', null,
+                React.createElement('tr', null,
+                  React.createElement('th', null, 'Question'),
+                  React.createElement('th', null, 'Yes'),
+                  React.createElement('th', null, 'No'),
+                  React.createElement('th', null, 'NA')
+                )
+              ),
+              React.createElement('tbody', null,
+                sec.items.map(it => {
+                  const r = resp[it.id];
+                  return React.createElement('tr', { key: it.id },
+                    React.createElement('td', null, it.question),
+                    React.createElement('td', { className: 'text-center' }, React.createElement('input', { type: 'radio', name: it.id, value: 'yes', required: true, checked: r.score === it.weight, onChange: () => upd(it.id, { score: it.weight, na: false }) })),
+                    React.createElement('td', { className: 'text-center' }, React.createElement('input', { type: 'radio', name: it.id, value: 'no', checked: r.score === 0 && !r.na, onChange: () => upd(it.id, { score: 0, na: false }) })),
+                    React.createElement('td', { className: 'text-center' }, React.createElement('input', { type: 'radio', name: it.id, value: 'na', checked: r.na, onChange: () => upd(it.id, { na: true, score: null }) }))
                   );
                 })
               )
             ),
-            React.createElement('input',{type:'file',accept:'image/*',multiple:true})
+            React.createElement('input', { type: 'file', accept: 'image/*', multiple: true })
           )),
-          React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
+          React.createElement('button', { type: 'submit', className: 'submit-btn' }, 'Submit & Download PDF')
         )
       );
     }
