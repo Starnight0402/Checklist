@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Training Audit Checklist</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>input[type="checkbox"]:focus{outline:2px solid #6366f1;outline-offset:1px;}</style>
+  <script>window.CHECKLIST = {"name": "Training Audit Checklist", "version": "1.0", "sections": [{"id": "Training Materials", "title": "Training Materials", "items": [{"id": "TM_1", "question": "FRM available at store?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "TM_2", "question": "BRM available at store?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "TM_3", "question": "One-pager \u2013 Hot/Cue Cards displayed?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "TM_4", "question": "One-pager \u2013 Cold/Cue Cards displayed?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "TM_5", "question": "Dial-in One-pager visible?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "TM_6", "question": "New-launch learning material posted?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "TM_7", "question": "COFFEE Playbook in store?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "TM_8", "question": "Shelf-life chart displayed?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "TM_9", "question": "Career progression chart displayed?", "weight": 1, "allow_na": true, "photo_upload": true}]}, {"id": "LMS", "title": "Learning Management System (LMS) Usage", "items": [{"id": "LMS_1", "question": "Orientation & Induction completed within 3 days of joining?", "weight": 4, "allow_na": true, "photo_upload": false}, {"id": "LMS_2", "question": "All assessments & knowledge checks completed on LMS?", "weight": 4, "allow_na": true, "photo_upload": false}, {"id": "LMS_3", "question": "Team uses LMS for new info & communication?", "weight": 2, "allow_na": true, "photo_upload": false}]}, {"id": "Buddy", "title": "Buddy Trainer Availability & Capability", "items": [{"id": "Buddy_1", "question": "\u22652 certified Buddy Trainers in caf\u00e9?", "weight": 2, "allow_na": true, "photo_upload": false}, {"id": "Buddy_2", "question": "Buddy Trainers completed skill checks?", "weight": 2, "allow_na": true, "photo_upload": false}, {"id": "Buddy_3", "question": "Trainees rostered with Buddy Trainers on same shift?", "weight": 2, "allow_na": true, "photo_upload": false}, {"id": "Buddy_4", "question": "Buddy Trainer logbook up-to-date?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Buddy_5", "question": "Trainer badge worn during training?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Buddy_6", "question": "Buddy schedules posted & visible?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "Buddy_7", "question": "Buddy Trainers receive monthly feedback?", "weight": 1, "allow_na": true, "photo_upload": false}]}, {"id": "NewJoiner", "title": "New Joiner Training & Records", "items": [{"id": "NJ_1", "question": "On-the-job tracker updated?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "NJ_2", "question": "15-day certification completed?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "NJ_3", "question": "Skill gaps documented?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "NJ_4", "question": "Training wall visible & current?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "NJ_5", "question": "Individual learning plan filed?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "NJ_6", "question": "Certification cards issued?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "NJ_7", "question": "Refresher training logged?", "weight": 1, "allow_na": true, "photo_upload": false}]}, {"id": "Partner", "title": "Partner Knowledge", "items": [{"id": "PK_1", "question": "Team aware of current company communications?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "PK_2", "question": "Partner conducts coffee tasting & sampling?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "PK_3", "question": "Sampling follows set guidelines?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "PK_4", "question": "Coffee tasting engaging & effective?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "PK_5", "question": "Team knows manual-brew methods & standards?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "PK_6", "question": "Partners follow grooming standards?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "PK_7", "question": "Pop-quiz passed?", "weight": 1, "allow_na": true, "photo_upload": false}]}, {"id": "TSA", "title": "TSA \u2013 Training Skill Assessment", "items": [{"id": "TSA_1", "question": "Partner 1 \u2013 Hot & Cold stations", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "TSA_2", "question": "Partner 2 \u2013 Food station", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "TSA_3", "question": "Partner 3 \u2013 Customer Service", "weight": 1, "allow_na": true, "photo_upload": false}]}, {"id": "CX", "title": "Customer Experience", "items": [{"id": "CX_1", "question": "Background music appropriate & at right volume?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "CX_2", "question": "Store temperature comfortable?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "CX_3", "question": "Washrooms clean & maintained?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "CX_4", "question": "Wi-Fi available & working?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "CX_5", "question": "VM elements correct?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "CX_6", "question": "Furniture clean & well-kept?", "weight": 1, "allow_na": true, "photo_upload": true}, {"id": "CX_7", "question": "Staff know key metrics?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "CX_8", "question": "Knows latest Mystery Audit score?", "weight": 1, "allow_na": true, "photo_upload": false}, {"id": "CX_9", "question": "Can name top 2 CX opportunities?", "weight": 1, "allow_na": true, "photo_upload": false}]}, {"id": "Action", "title": "Action Plan & Continuous Improvement", "items": [{"id": "AP_1", "question": "Action-plan concerns addressed/in progress?", "weight": 2, "allow_na": true, "photo_upload": true}, {"id": "AP_2", "question": "All managers aware of plan & next actions?", "weight": 3, "allow_na": true, "photo_upload": false}]}]};</script>
+</head>
+<body class="bg-gray-100 min-h-screen flex justify-center p-6">
+  <div id="root" class="w-full max-w-5xl"></div>
+  <script>
+    const { useState, useEffect } = React;
+    const checklist = window.CHECKLIST;
+    const p = new URLSearchParams(location.search);
+    const meta = { name: p.get('name')||'', id: p.get('id')||'', auditTime: new Date().toLocaleString() };
+    const KEY = `audit_${meta.id}`;
+    function fresh(){let o={}; checklist.sections.forEach(s=>s.items.forEach(i=>o[i.id]={score:0,na:false})); return o;}
+    function App(){
+      const [resp,setResp]=useState(()=>{try{return JSON.parse(localStorage.getItem(KEY))||fresh()}catch{return fresh()}});
+      useEffect(()=>localStorage.setItem(KEY,JSON.stringify(resp)),[resp]);
+      const upd=(id,patch)=>setResp(r=>({...r,[id]:{...r[id],...patch}}));
+      const submit=()=>{
+        const jsPDF = window.jspdf.jsPDF;
+        const doc=new jsPDF();
+        doc.setFontSize(14); doc.text("Training Audit Report",105,10,{align:"center"});
+        doc.setFontSize(10); doc.text(`Name: ${meta.name}`,10,20); doc.text(`ID: ${meta.id}`,10,26);
+        doc.text(`Time: ${meta.auditTime}`,10,32);
+        let y=40;
+        checklist.sections.forEach(sec=>{
+          doc.setFontSize(12); doc.text(sec.title,10,y); y+=6;
+          doc.setFontSize(10);
+          sec.items.forEach(it=>{
+            const r=resp[it.id]; const st=r.na?"NA":(r.score===it.weight?"Yes":"No");
+            const lines=doc.splitTextToSize(`- ${it.question} [${st}]`,180);
+            lines.forEach(l=>{ if(y>280){doc.addPage();y=20;} doc.text(l,10,y); y+=5;});
+          });
+          y+=4; if(y>280){doc.addPage();y=20;}
+        });
+        doc.save(`audit_${meta.id}_${Date.now()}.pdf`);
+        localStorage.removeItem(KEY);
+      };
+      return React.createElement("form",{onSubmit:e=>{e.preventDefault();submit()},"className":"space-y-8"},
+        React.createElement("header",{className:"text-center"},
+          React.createElement("h1",{className:"text-3xl font-bold"},checklist.name),
+          React.createElement("p",{className:"text-sm text-gray-500"},"v"+checklist.version),
+          React.createElement("div",{className:"text-sm text-gray-600"},`Auditor: ${meta.name} (ID ${meta.id}) | Time: ${meta.auditTime}`)
+        ),
+        ...checklist.sections.map(sec=>React.createElement("section",{key:sec.id,"className":"bg-white border rounded-2xl p-6"},
+          React.createElement("h2",{className:"text-xl font-semibold mb-4"},sec.title),
+          ...sec.items.map(it=>{
+            const r=resp[it.id];
+            return React.createElement("div",{key:it.id,"className":"mb-4"},
+              React.createElement("label",{className:"block font-medium mb-1"},it.question),
+              React.createElement("div",{className:"flex items-center gap-4"},
+                React.createElement("label",{className":"inline-flex gap-1 items-center"},
+                  React.createElement("input",{type:"radio",name:it.id,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false}),disabled:r.na}),"Yes"
+                ),
+                React.createElement("label",{className":"inline-flex gap-1 items-center"},
+                  React.createElement("input",{type:"radio",name:it.id,checked=r.score===0,onChange:()=>upd(it.id,{score:0,na:false}),disabled:r.na}),"No"
+                ),
+                it.allow_na&&React.createElement("label",{className":"inline-flex gap-1 items-center"},
+                  React.createElement("input",{type:"checkbox",checked:r.na,onChange:e=>upd(it.id,{na:e.target.checked,score:null})}),"NA"
+                )
+              )
+            );
+          })
+        )),
+        React.createElement("button",{type:"submit","className":"bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl w-full md:w-auto"},"Submit Audit")
+      );
+    }
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>

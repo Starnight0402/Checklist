@@ -1,0 +1,383 @@
+{
+  "name": "Training Audit Checklist",
+  "version": "1.0",
+  "sections": [
+    {
+      "id": "Training Materials",
+      "title": "Training Materials",
+      "items": [
+        {
+          "id": "TM_1",
+          "question": "FRM available at store?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_2",
+          "question": "BRM available at store?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_3",
+          "question": "One-pager \u2013 Hot/Cue Cards displayed?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_4",
+          "question": "One-pager \u2013 Cold/Cue Cards displayed?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_5",
+          "question": "Dial-in One-pager visible?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_6",
+          "question": "New-launch learning material posted?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_7",
+          "question": "COFFEE Playbook in store?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_8",
+          "question": "Shelf-life chart displayed?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "TM_9",
+          "question": "Career progression chart displayed?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        }
+      ]
+    },
+    {
+      "id": "LMS",
+      "title": "Learning Management System (LMS) Usage",
+      "items": [
+        {
+          "id": "LMS_1",
+          "question": "Orientation & Induction completed within 3 days of joining?",
+          "weight": 4,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "LMS_2",
+          "question": "All assessments & knowledge checks completed on LMS?",
+          "weight": 4,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "LMS_3",
+          "question": "Team uses LMS for new info & communication?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": false
+        }
+      ]
+    },
+    {
+      "id": "Buddy",
+      "title": "Buddy Trainer Availability & Capability",
+      "items": [
+        {
+          "id": "Buddy_1",
+          "question": "\u22652 certified Buddy Trainers in caf\u00e9?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "Buddy_2",
+          "question": "Buddy Trainers completed skill checks?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "Buddy_3",
+          "question": "Trainees rostered with Buddy Trainers on same shift?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "Buddy_4",
+          "question": "Buddy Trainer logbook up-to-date?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "Buddy_5",
+          "question": "Trainer badge worn during training?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "Buddy_6",
+          "question": "Buddy schedules posted & visible?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "Buddy_7",
+          "question": "Buddy Trainers receive monthly feedback?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        }
+      ]
+    },
+    {
+      "id": "NewJoiner",
+      "title": "New Joiner Training & Records",
+      "items": [
+        {
+          "id": "NJ_1",
+          "question": "On-the-job tracker updated?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "NJ_2",
+          "question": "15-day certification completed?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "NJ_3",
+          "question": "Skill gaps documented?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "NJ_4",
+          "question": "Training wall visible & current?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "NJ_5",
+          "question": "Individual learning plan filed?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "NJ_6",
+          "question": "Certification cards issued?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "NJ_7",
+          "question": "Refresher training logged?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        }
+      ]
+    },
+    {
+      "id": "Partner",
+      "title": "Partner Knowledge",
+      "items": [
+        {
+          "id": "PK_1",
+          "question": "Team aware of current company communications?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "PK_2",
+          "question": "Partner conducts coffee tasting & sampling?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "PK_3",
+          "question": "Sampling follows set guidelines?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "PK_4",
+          "question": "Coffee tasting engaging & effective?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "PK_5",
+          "question": "Team knows manual-brew methods & standards?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "PK_6",
+          "question": "Partners follow grooming standards?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "PK_7",
+          "question": "Pop-quiz passed?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        }
+      ]
+    },
+    {
+      "id": "TSA",
+      "title": "TSA \u2013 Training Skill Assessment",
+      "items": [
+        {
+          "id": "TSA_1",
+          "question": "Partner 1 \u2013 Hot & Cold stations",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "TSA_2",
+          "question": "Partner 2 \u2013 Food station",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "TSA_3",
+          "question": "Partner 3 \u2013 Customer Service",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        }
+      ]
+    },
+    {
+      "id": "CX",
+      "title": "Customer Experience",
+      "items": [
+        {
+          "id": "CX_1",
+          "question": "Background music appropriate & at right volume?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "CX_2",
+          "question": "Store temperature comfortable?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "CX_3",
+          "question": "Washrooms clean & maintained?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "CX_4",
+          "question": "Wi-Fi available & working?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "CX_5",
+          "question": "VM elements correct?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "CX_6",
+          "question": "Furniture clean & well-kept?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "CX_7",
+          "question": "Staff know key metrics?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "CX_8",
+          "question": "Knows latest Mystery Audit score?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        },
+        {
+          "id": "CX_9",
+          "question": "Can name top 2 CX opportunities?",
+          "weight": 1,
+          "allow_na": true,
+          "photo_upload": false
+        }
+      ]
+    },
+    {
+      "id": "Action",
+      "title": "Action Plan & Continuous Improvement",
+      "items": [
+        {
+          "id": "AP_1",
+          "question": "Action-plan concerns addressed/in progress?",
+          "weight": 2,
+          "allow_na": true,
+          "photo_upload": true
+        },
+        {
+          "id": "AP_2",
+          "question": "All managers aware of plan & next actions?",
+          "weight": 3,
+          "allow_na": true,
+          "photo_upload": false
+        }
+      ]
+    }
+  ]
+}
