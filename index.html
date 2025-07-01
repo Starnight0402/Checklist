@@ -15,8 +15,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    body { background: #f3f4f6; font-family: sans-serif; margin: 0; padding: 1rem; }
-    .container { max-width: 800px; margin: auto; background: white; padding: 1rem; border-radius: 0.5rem; }
+    body { background: #f3f4f6; font-family: sans-serif; margin: 0; }
+    .container { max-width: 800px; margin: 2rem auto; background: white; padding: 1rem; border-radius: 0.5rem; }
     .title { text-align: center; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
     th, td { border: 1px solid #e5e7eb; padding: 0.5rem; }
@@ -32,9 +32,9 @@
   <div class="container" id="root"></div>
 
   <script>
-    // Full checklist data
+    // Checklist data
     window.CHECKLIST = {
-      "name":"Training Audit Checklist","version":"1.0",
+      "name":"Third Wave Coffee | Training Audit","version":"1.0",
       "sections":[
         {"id":"Training Materials","title":"Training Materials","items":[
           {"id":"TM_1","question":"FRM available at store?","weight":1},
@@ -102,7 +102,118 @@
       ]
     };
 
-    // React app omitted for brevity
+    // React application
+    const { useState, useEffect } = React;
+    const params = new URLSearchParams(location.search);
+    const auditor = { name: params.get("name")||"", id: params.get("id")||"" };
+    const KEY = `audit_${auditor.id}`;
+    const LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycby_IJdm8W5aKaL-lcm5Gd_aFWwyHPQ7Sz9IE8VDFLH2OWaX8pj9i2N_nnRVwjqqlTSB/exec";
+
+    function freshResponses() {
+      const obj = {};
+      window.CHECKLIST.sections.forEach(sec => sec.items.forEach(it => obj[it.id] = { score: null, na: false }));
+      return obj;
+    }
+
+    function App() {
+      const [resp, setResp] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(KEY)) || freshResponses(); } catch { return freshResponses(); }
+      });
+      const [storeName, setStoreName] = useState("");
+      const [storeId, setStoreId] = useState("");
+
+      useEffect(() => { localStorage.setItem(KEY, JSON.stringify(resp)); }, [resp]);
+      const upd = (id, patch) => setResp(r => ({ ...r, [id]: { ...r[id], ...patch } }));
+
+      const handleSubmit = e => {
+        e.preventDefault();
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // PDF header gradient & title
+        doc.setFillColor(79,70,229);
+        doc.rect(0,0,doc.internal.pageSize.getWidth(),20,'F');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(16);
+        doc.text("Third Wave Coffee | Training Audit", doc.internal.pageSize.getWidth()/2,14,{align:"center"});
+
+        // compute scores
+        let totalScore=0, maxScore=0;
+        const rows=[];
+        window.CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{
+          const r=resp[it.id];
+          const ans = r.na?"NA":(r.score===it.weight?"Yes":"No");
+          rows.push([sec.title,it.question,ans]);
+          if(!r.na&&r.score!=null){totalScore+=r.score;maxScore+=it.weight;}  
+        }));
+        const percentage=maxScore?Math.round(100*totalScore/maxScore):0;
+
+        // score box top
+        doc.setFillColor(245,245,245);
+        doc.rect(10,25,60,15,'F');
+        doc.setTextColor(0);
+        doc.setFontSize(10);
+        doc.text(`Score: ${totalScore}/${maxScore}`,12,34);
+        doc.text(`(${percentage}%)`,12,40);
+
+        doc.autoTable({head:[["Section","Question","Response"]],body:rows,startY:45,styles:{fontSize:8}});
+
+        // log
+        fetch(LOG_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({storeName,storeId,auditorName:auditor.name,auditorId:auditor.id,score:totalScore,percentage})});
+
+        doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
+        localStorage.removeItem(KEY);
+      };
+
+      return React.createElement(
+        'div',{className:'container'},
+        React.createElement('h1',{className:'title'},window.CHECKLIST.name),
+        React.createElement('form',{onSubmit:handleSubmit},
+          React.createElement('div',{className:'grid grid-cols-2 gap-4 mb-4'},
+            React.createElement('div',null,
+              React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),
+              React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})
+            ),
+            React.createElement('div',null,
+              React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),
+              React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'})
+            )
+          ),
+          React.createElement('div',{className:'grid grid-cols-2 gap-4 mb-6'},
+            React.createElement('div',null,
+              React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),
+              React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})
+            ),
+            React.createElement('div',null,
+              React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),
+              React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'})
+            )
+          ),
+          window.CHECKLIST.sections.map(sec=>React.createElement(
+            'div',{key:sec.id,className:'section'},
+            React.createElement('h2',null,sec.title),
+            React.createElement('table',null,
+              React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),
+              React.createElement('tbody',null,
+                sec.items.map(it=>{
+                  const r=resp[it.id];
+                  return React.createElement('tr',{key:it.id},
+                    React.createElement('td',null,it.question),
+                    React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),
+                    React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),
+                    React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})}))
+                  );
+                })
+              )
+            ),
+            React.createElement('input',{type:'file',accept:'image/*',multiple:true})
+          )),
+          React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
 </body>
 </html>
