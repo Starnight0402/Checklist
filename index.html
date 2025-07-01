@@ -127,10 +127,24 @@
     const handleImage = (secId,e)=>{
       Array.from(e.target.files).forEach(file=>{
         const reader=new FileReader();
-        reader.onload=()=>setSectionImages(prev=>{
-          const arr=prev[secId]||[];
-          return {...prev,[secId]:[...arr,reader.result]};
-        });
+        reader.onload=evt=>{
+          const imgEl=new Image();
+          imgEl.onload=()=>{
+            const canvas=document.createElement('canvas');
+            const MAX_W=800;
+            let [w,h]=[imgEl.width,imgEl.height];
+            if(w>MAX_W){ h=h*MAX_W/w; w=MAX_W; }
+            canvas.width=w; canvas.height=h;
+            canvas.getContext('2d').drawImage(imgEl,0,0,w,h);
+            const type=file.type.includes('png')?'image/png':'image/jpeg';
+            const dataUrl=canvas.toDataURL(type,0.8);
+            setSectionImages(prev=>{
+              const arr=prev[secId]||[];
+              return {...prev,[secId]:[...arr,dataUrl]};
+            });
+          };
+          imgEl.src=evt.target.result;
+        };
         reader.readAsDataURL(file);
       });
     };
@@ -170,7 +184,8 @@
         });
         y=doc.autoTable.previous.finalY+5;
         (sectionImages[sec.id]||[]).forEach(img=>{
-          doc.addImage(img,'JPEG',15,y,50,30); y+=35;
+          const fmt=img.startsWith('data:image/png')?'PNG':'JPEG';
+          doc.addImage(img,fmt,15,y,50,30); y+=35;
         });
       });
       doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
