@@ -10,16 +10,19 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <style>
-    body { background: #f3f4f6; font-family: sans-serif; margin: 0; }
-    .container { max-width: 800px; margin: 2rem auto; background: #fff; padding: 1rem; border-radius: .5rem; }
-    .title { text-align: center; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
-    .section { margin-bottom: 2rem; padding-top: 1rem; border-top: 2px solid #e5e7eb; }
+    body { background: linear-gradient(135deg, #f9f2ec, #eef9f2); font-family: sans-serif; margin: 0; }
+    .container { max-width: 800px; margin: 2rem auto; background: #fff; padding: 1.5rem; border-radius: .75rem; }
+    .logo { display: block; margin: 0 auto 1rem; max-width: 200px; }
+    .title { text-align: center; font-size: 2rem; font-weight: 700; margin: 0.5rem 0; }
+    .info-box { border: 1px solid #e5e7eb; padding: 1rem; border-radius: .75rem; margin-bottom: 2rem; }
+    .section { margin-bottom: 2rem; border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .section h2 { text-align: center; font-weight: 700; margin-bottom: 1rem; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
     th, td { border: 1px solid #e5e7eb; padding: .5rem; }
-    th { background-color: #e5e7eb; }
+    th { background-color: #f3f4f6; }
     input[type=radio] { margin-right: .25rem; }
-    .photo-preview { max-width: 100px; margin-right: .5rem; margin-top: .5rem; border-radius: .25rem; }
-    .submit-btn { background: #4f46e5; color: #fff; padding: .75rem 1.5rem; border: none; border-radius: .375rem; cursor: pointer; }
+    .photo-preview { max-width: 100px; margin: .5rem; border-radius: .25rem; }
+    .submit-btn { background: #4f46e5; color: #fff; padding: .75rem 1.5rem; border: none; border-radius: .5rem; cursor: pointer; font-size: 1rem; }
   </style>
 </head>
 <body>
@@ -30,80 +33,182 @@
     const auditor = { name: params.get('name')||'', id: params.get('id')||'' };
     const KEY = `audit_${auditor.id}`;
     const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby_IJdm8W5aKaL-lcm5Gd_aFWwyHPQ7Sz9IE8VDFLH2OWaX8pj9i2N_nnRVwjqqlTSB/exec';
-    const CHECKLIST = { name:'Training Audit Checklist', version:'1.0', sections:[
-      { id:'Training Materials', title:'Training Materials', items:[
-        {id:'TM_1',question:'FRM available at store?',weight:1},
-        {id:'TM_2',question:'BRM available at store?',weight:1},
-        {id:'TM_3',question:'One-pager – Hot/Cue Cards displayed?',weight:1},
-        {id:'TM_4',question:'One-pager – Cold/Cue Cards displayed?',weight:1},
-        {id:'TM_5',question:'Dial-in One-pager visible?',weight:2},
-        {id:'TM_6',question:'New-launch learning material posted?',weight:1},
-        {id:'TM_7',question:'COFFEE Playbook in store?',weight:1},
-        {id:'TM_8',question:'Shelf-life chart displayed?',weight:1},
-        {id:'TM_9',question:'Career progression chart displayed?',weight:1}
-      ]},
-      { id:'LMS', title:'LMS Usage', items:[
-        {id:'LMS_1',question:'Orientation & Induction completed within 3 days?',weight:4},
-        {id:'LMS_2',question:'All assessments & knowledge checks on LMS?',weight:4},
-        {id:'LMS_3',question:'Team uses LMS for new info & comms?',weight:2}
-      ]},
-      { id:'Buddy', title:'Buddy Trainer Capabilities', items:[
-        {id:'Buddy_1',question:'≥2 certified Buddy Trainers in café?',weight:2},
-        {id:'Buddy_2',question:'Buddy Trainers passed skill checks?',weight:2},
-        {id:'Buddy_3',question:'Trainees rostered with Buddies?',weight:2},
-        {id:'Buddy_4',question:'Logbook up-to-date?',weight:1},
-        {id:'Buddy_5',question:'Badge worn during training?',weight:1},
-        {id:'Buddy_6',question:'Schedules visible?',weight:1},
-        {id:'Buddy_7',question:'Monthly feedback sessions?',weight:1}
-      ]}
-      // add remaining sections...
-    ]};
-    function freshResponses(){ const obj={}; CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>obj[it.id]={score:null,na:false})); return obj; }
-    function App(){
-      const [resp,setResp]=useState(()=>{ try{return JSON.parse(localStorage.getItem(KEY))||freshResponses();}catch{return freshResponses();}});
-      const [storeName,setStoreName]=useState(''); const [storeId,setStoreId]=useState('');
-      const [sectionImages,setSectionImages]=useState({});
-      useEffect(()=>{localStorage.setItem(KEY,JSON.stringify(resp));},[resp]);
-      const upd=(id,patch)=>setResp(r=>({...r,[id]:{...r[id],...patch}}));
-      const handleImage=(secId,e)=>{Array.from(e.target.files).forEach(file=>{const reader=new FileReader();reader.onload=()=>setSectionImages(prev=>{const arr=prev[secId]||[];return{...prev,[secId]:[...arr,reader.result]};});reader.readAsDataURL(file);});};
-      const handleSubmit=e=>{e.preventDefault();const{jsPDF}=window.jspdf;const doc=new jsPDF();
-        doc.setFillColor(79,70,229);doc.rect(0,0,doc.internal.pageSize.getWidth(),30,'F');doc.setTextColor(255,255,255);doc.setFontSize(24);doc.text(`Score: ${computeScore()}`,doc.internal.pageSize.getWidth()/2,18,{align:'center'});
-        doc.setFontSize(18);doc.text(`Training audit report | ${storeName}`,doc.internal.pageSize.getWidth()/2,30,{align:'center'});
-        let y=50;let total=0,max=0;
-        CHECKLIST.sections.forEach((sec,i)=>{
-          doc.setDrawColor(200);doc.setLineWidth(0.5);doc.line(10,y,200,y);y+=5;
-          doc.setFontSize(16);doc.setTextColor(0);doc.text(sec.title,10,y);y+=7;
-          const imgs=sectionImages[sec.id]||[];imgs.forEach(img=>{doc.addImage(img,'JPEG',10,y,50,30);y+=35;if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;}});
-          const rows=sec.items.map(it=>{const r=resp[it.id];const ans=r.na?'NA':(r.score===it.weight?'Yes':'No');if(!r.na&&r.score!=null){total+=r.score;max+=it.weight;}return[wrapText(it.question,80),ans];});
-          doc.autoTable({startY:y,head:[['Question','Response']],body:rows,styles:{fontSize:8},headStyles:{fillColor:[79,70,229],textColor:255},didParseCell:data=>{if(data.section==='body'&&data.column.index===1){const t=data.cell.text[0];if(t==='Yes')data.cell.styles.textColor=[0,128,0];if(t==='No')data.cell.styles.textColor=[255,0,0];if(t==='NA')data.cell.styles.textColor=[255,165,0];}}});
-          y=doc.autoTable.previous.finalY+10;
+    const CHECKLIST = {
+      name: 'Training Audit Checklist',
+      version: '1.0',
+      sections: [
+        { id: 'Training Materials', title: 'Training Materials', items: [
+          { id: 'TM_1', question: 'FRM available at store?', weight: 1 },
+          { id: 'TM_2', question: 'BRM available at store?', weight: 1 },
+          { id: 'TM_3', question: 'One-pager – Hot/Cue Cards displayed?', weight: 1 },
+          { id: 'TM_4', question: 'One-pager – Cold/Cue Cards displayed?', weight: 1 },
+          { id: 'TM_5', question: 'Dial-in One-pager visible?', weight: 2 },
+          { id: 'TM_6', question: 'New-launch learning material posted?', weight: 1 },
+          { id: 'TM_7', question: 'COFFEE Playbook in store?', weight: 1 },
+          { id: 'TM_8', question: 'Shelf-life chart displayed?', weight: 1 },
+          { id: 'TM_9', question: 'Career progression chart displayed?', weight: 1 }
+        ]},
+        { id: 'LMS', title: 'LMS Usage', items: [
+          { id: 'LMS_1', question: 'Orientation & Induction completed within 3 days?', weight: 4 },
+          { id: 'LMS_2', question: 'All assessments & knowledge checks on LMS?', weight: 4 },
+          { id: 'LMS_3', question: 'Team uses LMS for new info & comms?', weight: 2 }
+        ]},
+        { id: 'Buddy', title: 'Buddy Trainer Capabilities', items: [
+          { id: 'Buddy_1', question: '≥2 certified Buddy Trainers in café?', weight: 2 },
+          { id: 'Buddy_2', question: 'Buddy Trainers passed skill checks?', weight: 2 },
+          { id: 'Buddy_3', question: 'Trainees rostered with Buddies?', weight: 2 },
+          { id: 'Buddy_4', question: 'Logbook up-to-date?', weight: 1 },
+          { id: 'Buddy_5', question: 'Badge worn during training?', weight: 1 },
+          { id: 'Buddy_6', question: 'Schedules visible?', weight: 1 },
+          { id: 'Buddy_7', question: 'Monthly feedback sessions?', weight: 1 }
+        ]},
+        { id: 'NewJoiner', title: 'New Joiner Training', items: [
+          { id: 'NJ_1', question: 'Tracker updated?', weight: 2 },
+          { id: 'NJ_2', question: '15-day cert completed?', weight: 2 },
+          { id: 'NJ_3', question: 'Skill gaps documented?', weight: 1 },
+          { id: 'NJ_4', question: 'Training wall current?', weight: 1 },
+          { id: 'NJ_5', question: 'Learning plan filed?', weight: 1 },
+          { id: 'NJ_6', question: 'Cert cards issued?', weight: 1 },
+          { id: 'NJ_7', question: 'Refresher logged?', weight: 1 }
+        ]},
+        { id: 'Partner', title: 'Partner Knowledge', items: [
+          { id: 'PK_1', question: 'Team knows company comms?', weight: 1 },
+          { id: 'PK_2', question: 'Tasting & sampling done?', weight: 1 },
+          { id: 'PK_3', question: 'Sampling follows guidelines?', weight: 1 },
+          { id: 'PK_4', question: 'Tasting engaging?', weight: 1 },
+          { id: 'PK_5', question: 'Team knows manual brew?', weight: 1 },
+          { id: 'PK_6', question: 'Grooming standards met?', weight: 1 },
+          { id: 'PK_7', question: 'Pop-quiz passed?', weight: 1 }
+        ]},
+        { id: 'TSA', title: 'Skill Assessment', items: [
+          { id: 'TSA_1', question: 'Hot & Cold stations working?', weight: 1 },
+          { id: 'TSA_2', question: 'Food station cleanliness?', weight: 1 },
+          { id: 'TSA_3', question: 'Customer Service quality?', weight: 1 }
+        ]},
+        { id: 'CX', title: 'Customer Experience', items: [
+          { id: 'CX_1', question: 'Music at right volume?', weight: 1 },
+          { id: 'CX_2', question: 'Temperature comfortable?', weight: 1 },
+          { id: 'CX_3', question: 'Washrooms clean?', weight: 1 },
+          { id: 'CX_4', question: 'Wi-Fi working?', weight: 1 },
+          { id: 'CX_5', question: 'VM elements correct?', weight: 1 },
+          { id: 'CX_6', question: 'Furniture well-kept?', weight: 1 },
+          { id: 'CX_7', question: 'Staff know key metrics?', weight: 1 },
+          { id: 'CX_8', question: 'Mystery Audit score known?', weight: 1 },
+          { id: 'CX_9', question: 'Top 2 CX opps named?', weight: 1 }
+        ]},
+        { id: 'AP', title: 'Action Plan', items: [
+          { id: 'AP_1', question: 'Concerns addressed?', weight: 2 },
+          { id: 'AP_2', question: 'Managers aware?', weight: 3 }
+        ]}
+      ]
+    };
+    function freshResponses() {
+      const obj = {};
+      CHECKLIST.sections.forEach(sec => sec.items.forEach(it => obj[it.id] = { score: null, na: false }));
+      return obj;
+    }
+    function App() {
+      const [resp, setResp] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(KEY)) || freshResponses(); }
+        catch { return freshResponses(); }
+      });
+      const [storeName, setStoreName] = useState('');
+      const [storeId, setStoreId] = useState('');
+      const [sectionImages, setSectionImages] = useState({});
+      useEffect(() => { localStorage.setItem(KEY, JSON.stringify(resp)); }, [resp]);
+      const upd = (id, patch) => setResp(r => ({ ...r, [id]: { ...r[id], ...patch } }));
+      const handleImage = (secId, e) => {
+        Array.from(e.target.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            setSectionImages(prev => {
+              const arr = prev[secId] || [];
+              return { ...prev, [secId]: [...arr, reader.result] };
+            });
+          };
+          reader.readAsDataURL(file);
         });
-        const pct=max?Math.round(100*total/max):0;
-        doc.addPage();doc.setFontSize(14);doc.text(`Overall Score: ${total}/${max} (${pct}%)`,10,20);
-        doReportDetails(doc,total,max,pct);
+      };
+      const handleSubmit = e => {
+        e.preventDefault();
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const scoreText = computeScore();
+        doc.setFillColor(79,70,229);
+        doc.rect(10,10,190,30,'F');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(24);
+        doc.text(`Score: ${scoreText}`, 105, 28, { align: 'center' });
+        doc.setFontSize(18);
+        doc.setTextColor(0);
+        doc.text(`Training audit report | ${storeName}`, 105, 45, { align: 'center' });
+        let y = 60;
+        CHECKLIST.sections.forEach(sec => {
+          y += 15;
+          doc.setFontSize(16);
+          doc.text(sec.title, 105, y, { align: 'center' });
+          y += 10;
+          const rows = sec.items.map(it => {
+            const r = resp[it.id];
+            const a = r.na ? 'NA' : (r.score === it.weight ? 'Yes' : 'No');
+            return [it.question, a];
+          });
+          doc.autoTable({ startY: y, head: [['Question','Response']], body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [79,70,229], textColor: 255 }, didParseCell: data => {
+            if (data.section === 'body' && data.column.index === 1) {
+              const t = data.cell.text[0];
+              if (t === 'Yes') data.cell.styles.textColor = [0,128,0];
+              if (t === 'No') data.cell.styles.textColor = [255,0,0];
+              if (t === 'NA') data.cell.styles.textColor = [255,165,0];
+            }
+          } });
+          y = doc.autoTable.previous.finalY + 5;
+          (sectionImages[sec.id] || []).forEach(img => {
+            doc.addImage(img, 'JPEG', 15, y, 50, 30);
+            y += 35;
+          });
+        });
         doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
       };
-      function computeScore(){let t=0,m=0;CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{const r=resp[it.id];if(!r.na&&r.score!=null){t+=r.score;m+=it.weight;}}));return`${t}/${m} (${m?Math.round(100*t/m):0}%)`;}
-      function doReportDetails(doc,t,m,p){doc.autoTable({startY:30,head:[['Field','Value']],body:[['Store',storeName],['Store ID',storeId],['Auditor',auditor.name],['Auditor ID',auditor.id],['Score',`${t}/${m}`],['Percentage',`${p}%`]],styles:{fontSize:10},headStyles:{fillColor:[230,230,230]}});}      
-      function wrapText(txt,width){const words=txt.split(' '),lines=[];let line='';words.forEach(w=>{if((line+w).length*2<width){line+=w+' '}else{lines.push(line);line=w+' ';}});if(line)lines.push(line);return lines.join('\n');}
+      function computeScore() {
+        let t=0, m=0;
+        CHECKLIST.sections.forEach(sec => sec.items.forEach(it => {
+          const r = resp[it.id];
+          if (!r.na && r.score != null) { t += r.score; m += it.weight; }
+        }));
+        return `${t}/${m} (${m ? Math.round(100*t/m) : 0}%)`;
+      }
       return React.createElement('div',{className:'container'},
-        React.createElement('h1',{className:'title'},CHECKLIST.name),
-        React.createElement('form',{onSubmit:handleSubmit},
+        React.createElement('img',{src:'sandbox:/mnt/data/L&D Logo new.png',alt:'Logo',className:'logo'}),
+        React.createElement('h1',{className:'title'}, CHECKLIST.name),
+        React.createElement('div',{className:'info-box'},
           React.createElement('div',{className:'grid grid-cols-2 mb-4'},
-            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})),
-            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'}))
+            React.createElement('div',null, React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'), React.createElement('input',{type:'text', value:auditor.name, readOnly:true, className:'w-full p-2 border rounded'})),
+            React.createElement('div',null, React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'), React.createElement('input',{type:'text', value:auditor.id, readOnly:true, className:'w-full p-2 border rounded'}))
           ),
-          React.createElement('div',{className:'grid grid-cols-2 mb-6'},
-            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})),
-            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'}))
-          ),
-          CHECKLIST.sections.map(sec=>React.createElement('div',{key:sec.id,className:'section'},
-            React.createElement('h2',null,sec.title),
-            React.createElement('table',null,React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),React.createElement('tbody',null,sec.items.map(it=>{const r=resp[it.id];return React.createElement('tr',{key:it.id},React.createElement('td',null,it.question),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})})));})),),
-            React.createElement('input',{type:'file',accept:'image/*',capture:'environment',multiple:true,onChange:e=>handleImage(sec.id,e)}),
-            React.createElement('div',null,(sectionImages[sec.id]||[]).map((src,i)=>React.createElement('img',{key:i,src:src,className:'photo-preview'})))
+          React.createElement('div',{className:'grid grid-cols-2'},
+            React.createElement('div',null, React.createElement('label',{className:'block font-medium mb-1'},'Store Name'), React.createElement('input',{type:'text', value:storeName, onChange:e=>setStoreName(e.target.value), required:true, className:'w-full p-2 border rounded'})),
+            React.createElement('div',null, React.createElement('label',{className:'block font-medium mb-1'},'Store ID'), React.createElement('input',{type:'text', value:storeId, onChange:e=>setStoreId(e.target.value), required:true, className:'w-full p-2 border rounded'}))
+          )
+        ),
+        React.createElement('form',{onSubmit:handleSubmit},
+          CHECKLIST.sections.map(sec => React.createElement('div',{key:sec.id,className:'section'},
+            React.createElement('h2',null, sec.title),
+            React.createElement('table',null,
+              React.createElement('thead',null, React.createElement('tr',null, React.createElement('th',null,'Question'), React.createElement('th',null,'Yes'), React.createElement('th',null,'No'), React.createElement('th',null,'NA'))),
+              React.createElement('tbody',null, sec.items.map(it => {
+                const r = resp[it.id];
+                return React.createElement('tr',{key:it.id},
+                  React.createElement('td',null, it.question),
+                  React.createElement('td',{className:'text-center'}, React.createElement('input',{type:'radio', name:it.id, value:'yes', required:true, checked:r.score===it.weight, onChange:()=>upd(it.id,{score:it.weight,na:false})})),
+                  React.createElement('td',{className:'text-center'}, React.createElement('input',{type:'radio', name:it.id, value:'no', checked:r.score===0&&!r.na, onChange:()=>upd(it.id,{score:0,na:false})})),
+                  React.createElement('td',{className:'text-center'}, React.createElement('input',{type:'radio', name:it.id, value:'na', checked:r.na, onChange:()=>upd(it.id,{na:true,score:null})}))
+                );
+              }))
+            ),
+            React.createElement('input',{type:'file', accept:'image/*', capture:'environment', multiple:true, onChange:e=>handleImage(sec.id,e)}),
+            React.createElement('div',null, (sectionImages[sec.id]||[]).map((src,i) => React.createElement('img',{key:i,src:src,className:'photo-preview'})))
           )),
-          React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
+          React.createElement('button',{type:'submit',className:'submit-btn'}, 'Submit & Download PDF')
         )
       );
     }
