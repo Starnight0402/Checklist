@@ -13,13 +13,12 @@
     body { background: #f3f4f6; font-family: sans-serif; margin: 0; }
     .container { max-width: 800px; margin: 2rem auto; background: #fff; padding: 1rem; border-radius: .5rem; }
     .title { text-align: center; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
-    .grid { display: grid; gap: 1rem; }
-    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .section { margin-bottom: 2rem; padding-top: 1rem; border-top: 2px solid #e5e7eb; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
     th, td { border: 1px solid #e5e7eb; padding: .5rem; }
     th { background-color: #e5e7eb; }
     input[type=radio] { margin-right: .25rem; }
-    .photo-preview { max-width: 100px; margin-right: .5rem; margin-bottom: .5rem; border-radius: .25rem; }
+    .photo-preview { max-width: 100px; margin-right: .5rem; margin-top: .5rem; border-radius: .25rem; }
     .submit-btn { background: #4f46e5; color: #fff; padding: .75rem 1.5rem; border: none; border-radius: .375rem; cursor: pointer; }
   </style>
 </head>
@@ -28,168 +27,81 @@
   <script>
     const { useState, useEffect } = React;
     const params = new URLSearchParams(location.search);
-    const auditor = { name: params.get('name') || '', id: params.get('id') || '' };
+    const auditor = { name: params.get('name')||'', id: params.get('id')||'' };
     const KEY = `audit_${auditor.id}`;
     const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby_IJdm8W5aKaL-lcm5Gd_aFWwyHPQ7Sz9IE8VDFLH2OWaX8pj9i2N_nnRVwjqqlTSB/exec';
-    const CHECKLIST = {
-      name: 'Training Audit Checklist', version: '1.0', sections: [
-        { id: 'Training Materials', title: 'Training Materials', items: [
-          { id: 'TM_1', question: 'FRM available at store?', weight: 1 },
-          { id: 'TM_2', question: 'BRM available at store?', weight: 1 },
-          { id: 'TM_3', question: 'One-pager – Hot/Cue Cards displayed?', weight: 1 },
-          { id: 'TM_4', question: 'One-pager – Cold/Cue Cards displayed?', weight: 1 },
-          { id: 'TM_5', question: 'Dial-in One-pager visible?', weight: 2 },
-          { id: 'TM_6', question: 'New-launch learning material posted?', weight: 1 },
-          { id: 'TM_7', question: 'COFFEE Playbook in store?', weight: 1 },
-          { id: 'TM_8', question: 'Shelf-life chart displayed?', weight: 1 },
-          { id: 'TM_9', question: 'Career progression chart displayed?', weight: 1 }
-        ]},
-        { id: 'LMS', title: 'LMS Usage', items: [
-          { id: 'LMS_1', question: 'Orientation & Induction completed within 3 days?', weight: 4 },
-          { id: 'LMS_2', question: 'All assessments & knowledge checks on LMS?', weight: 4 },
-          { id: 'LMS_3', question: 'Team uses LMS for new info & comms?', weight: 2 }
-        ]},
-        { id: 'Buddy', title: 'Buddy Trainer Capabilities', items: [
-          { id: 'Buddy_1', question: '≥2 certified Buddy Trainers in café?', weight: 2 },
-          { id: 'Buddy_2', question: 'Buddy Trainers passed skill checks?', weight: 2 },
-          { id: 'Buddy_3', question: 'Trainees rostered with Buddies?', weight: 2 },
-          { id: 'Buddy_4', question: 'Logbook up-to-date?', weight: 1 },
-          { id: 'Buddy_5', question: 'Badge worn during training?', weight: 1 },
-          { id: 'Buddy_6', question: 'Schedules visible?', weight: 1 },
-          { id: 'Buddy_7', question: 'Monthly feedback sessions?', weight: 1 }
-        ]},
-        // Add other sections similarly...
-      ]
-    };
-    function freshResponses() {
-      const obj = {};
-      CHECKLIST.sections.forEach(sec => sec.items.forEach(it => obj[it.id] = { score: null, na: false }));
-      return obj;
-    }
-    function App() {
-      const [resp, setResp] = useState(() => {
-        try { return JSON.parse(localStorage.getItem(KEY)) || freshResponses(); }
-        catch { return freshResponses(); }
-      });
-      const [storeName, setStoreName] = useState('');
-      const [storeId, setStoreId] = useState('');
-      const [sectionImages, setSectionImages] = useState({});
-      useEffect(() => { localStorage.setItem(KEY, JSON.stringify(resp)); }, [resp]);
-      const upd = (id, patch) => setResp(r => ({ ...r, [id]: { ...r[id], ...patch } }));
-      const handleImage = (secId, e) => {
-        Array.from(e.target.files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = () => setSectionImages(prev => {
-            const arr = prev[secId] || [];
-            return { ...prev, [secId]: [...arr, reader.result] };
-          });
-          reader.readAsDataURL(file);
+    const CHECKLIST = { name:'Training Audit Checklist', version:'1.0', sections:[
+      { id:'Training Materials', title:'Training Materials', items:[
+        {id:'TM_1',question:'FRM available at store?',weight:1},
+        {id:'TM_2',question:'BRM available at store?',weight:1},
+        {id:'TM_3',question:'One-pager – Hot/Cue Cards displayed?',weight:1},
+        {id:'TM_4',question:'One-pager – Cold/Cue Cards displayed?',weight:1},
+        {id:'TM_5',question:'Dial-in One-pager visible?',weight:2},
+        {id:'TM_6',question:'New-launch learning material posted?',weight:1},
+        {id:'TM_7',question:'COFFEE Playbook in store?',weight:1},
+        {id:'TM_8',question:'Shelf-life chart displayed?',weight:1},
+        {id:'TM_9',question:'Career progression chart displayed?',weight:1}
+      ]},
+      { id:'LMS', title:'LMS Usage', items:[
+        {id:'LMS_1',question:'Orientation & Induction completed within 3 days?',weight:4},
+        {id:'LMS_2',question:'All assessments & knowledge checks on LMS?',weight:4},
+        {id:'LMS_3',question:'Team uses LMS for new info & comms?',weight:2}
+      ]},
+      { id:'Buddy', title:'Buddy Trainer Capabilities', items:[
+        {id:'Buddy_1',question:'≥2 certified Buddy Trainers in café?',weight:2},
+        {id:'Buddy_2',question:'Buddy Trainers passed skill checks?',weight:2},
+        {id:'Buddy_3',question:'Trainees rostered with Buddies?',weight:2},
+        {id:'Buddy_4',question:'Logbook up-to-date?',weight:1},
+        {id:'Buddy_5',question:'Badge worn during training?',weight:1},
+        {id:'Buddy_6',question:'Schedules visible?',weight:1},
+        {id:'Buddy_7',question:'Monthly feedback sessions?',weight:1}
+      ]}
+      // add remaining sections...
+    ]};
+    function freshResponses(){ const obj={}; CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>obj[it.id]={score:null,na:false})); return obj; }
+    function App(){
+      const [resp,setResp]=useState(()=>{ try{return JSON.parse(localStorage.getItem(KEY))||freshResponses();}catch{return freshResponses();}});
+      const [storeName,setStoreName]=useState(''); const [storeId,setStoreId]=useState('');
+      const [sectionImages,setSectionImages]=useState({});
+      useEffect(()=>{localStorage.setItem(KEY,JSON.stringify(resp));},[resp]);
+      const upd=(id,patch)=>setResp(r=>({...r,[id]:{...r[id],...patch}}));
+      const handleImage=(secId,e)=>{Array.from(e.target.files).forEach(file=>{const reader=new FileReader();reader.onload=()=>setSectionImages(prev=>{const arr=prev[secId]||[];return{...prev,[secId]:[...arr,reader.result]};});reader.readAsDataURL(file);});};
+      const handleSubmit=e=>{e.preventDefault();const{jsPDF}=window.jspdf;const doc=new jsPDF();
+        doc.setFillColor(79,70,229);doc.rect(0,0,doc.internal.pageSize.getWidth(),30,'F');doc.setTextColor(255,255,255);doc.setFontSize(24);doc.text(`Score: ${computeScore()}`,doc.internal.pageSize.getWidth()/2,18,{align:'center'});
+        doc.setFontSize(18);doc.text(`Training audit report | ${storeName}`,doc.internal.pageSize.getWidth()/2,30,{align:'center'});
+        let y=50;let total=0,max=0;
+        CHECKLIST.sections.forEach((sec,i)=>{
+          doc.setDrawColor(200);doc.setLineWidth(0.5);doc.line(10,y,200,y);y+=5;
+          doc.setFontSize(16);doc.setTextColor(0);doc.text(sec.title,10,y);y+=7;
+          const imgs=sectionImages[sec.id]||[];imgs.forEach(img=>{doc.addImage(img,'JPEG',10,y,50,30);y+=35;if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;}});
+          const rows=sec.items.map(it=>{const r=resp[it.id];const ans=r.na?'NA':(r.score===it.weight?'Yes':'No');if(!r.na&&r.score!=null){total+=r.score;max+=it.weight;}return[wrapText(it.question,80),ans];});
+          doc.autoTable({startY:y,head:[['Question','Response']],body:rows,styles:{fontSize:8},headStyles:{fillColor:[79,70,229],textColor:255},didParseCell:data=>{if(data.section==='body'&&data.column.index===1){const t=data.cell.text[0];if(t==='Yes')data.cell.styles.textColor=[0,128,0];if(t==='No')data.cell.styles.textColor=[255,0,0];if(t==='NA')data.cell.styles.textColor=[255,165,0];}}});
+          y=doc.autoTable.previous.finalY+10;
         });
-      };
-      const handleSubmit = e => {
-        e.preventDefault();
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFillColor(79,70,229);
-        doc.rect(0,0,doc.internal.pageSize.getWidth(),25,'F');
-        doc.setTextColor(255,255,255);
-        doc.setFontSize(18);
-        doc.text(`Training audit report | ${storeName}`, doc.internal.pageSize.getWidth()/2,15,{align:'center'});
-        let yStart = 40;
-        let totalScore = 0, maxScore = 0;
-        CHECKLIST.sections.forEach(sec => {
-          doc.setTextColor(0);
-          doc.setFontSize(14);
-          doc.text(sec.title, 10, yStart);
-          yStart += 5;
-          (sectionImages[sec.id] || []).forEach(img => {
-            doc.addImage(img,'JPEG',10,yStart,50,30);
-            yStart += 35;
-            if (yStart > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); yStart = 20; }
-          });
-          const rows = sec.items.map(it => {
-            const r = resp[it.id];
-            const ans = r.na ? 'NA' : (r.score === it.weight ? 'Yes' : 'No');
-            if (!r.na && r.score != null) { totalScore += r.score; maxScore += it.weight; }
-            return [it.question, ans];
-          });
-          doc.autoTable({
-            startY: yStart,
-            head: [['Question','Response']],
-            body: rows,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [79,70,229], textColor: 255 },
-            didParseCell: data => {
-              if (data.section==='body' && data.column.index===1) {
-                const t = data.cell.text[0];
-                if (t==='Yes') data.cell.styles.textColor=[0,128,0];
-                if (t==='No') data.cell.styles.textColor=[255,0,0];
-                if (t==='NA') data.cell.styles.textColor=[255,165,0];
-              }
-            }
-          });
-          yStart = doc.autoTable.previous.finalY + 10;
-        });
-        const percentage = maxScore ? Math.round(100 * totalScore / maxScore) : 0;
-        doc.addPage();
-        doc.autoTable({
-          startY: 20,
-          head: [['Field','Value']],
-          body: [
-            ['Store Name', storeName],
-            ['Store ID', storeId],
-            ['Auditor Name', auditor.name],
-            ['Auditor ID', auditor.id],
-            ['Score', `${totalScore}/${maxScore}`],
-            ['Percentage', `${percentage}%`]
-          ],
-          styles: { fontSize: 10 },
-          headStyles: { fillColor: [230,230,230] }
-        });
-        fetch(LOG_ENDPOINT, { method:'POST', mode:'no-cors', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ storeName, storeId, auditorName: auditor.name, auditorId: auditor.id, score: totalScore, percentage }) });
+        const pct=max?Math.round(100*total/max):0;
+        doc.addPage();doc.setFontSize(14);doc.text(`Overall Score: ${total}/${max} (${pct}%)`,10,20);
+        doReportDetails(doc,total,max,pct);
         doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
-        localStorage.removeItem(KEY);
-        window.alert('Report downloaded');
       };
+      function computeScore(){let t=0,m=0;CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{const r=resp[it.id];if(!r.na&&r.score!=null){t+=r.score;m+=it.weight;}}));return`${t}/${m} (${m?Math.round(100*t/m):0}%)`;}
+      function doReportDetails(doc,t,m,p){doc.autoTable({startY:30,head:[['Field','Value']],body:[['Store',storeName],['Store ID',storeId],['Auditor',auditor.name],['Auditor ID',auditor.id],['Score',`${t}/${m}`],['Percentage',`${p}%`]],styles:{fontSize:10},headStyles:{fillColor:[230,230,230]}});}      
+      function wrapText(txt,width){const words=txt.split(' '),lines=[];let line='';words.forEach(w=>{if((line+w).length*2<width){line+=w+' '}else{lines.push(line);line=w+' ';}});if(line)lines.push(line);return lines.join('\n');}
       return React.createElement('div',{className:'container'},
         React.createElement('h1',{className:'title'},CHECKLIST.name),
         React.createElement('form',{onSubmit:handleSubmit},
           React.createElement('div',{className:'grid grid-cols-2 mb-4'},
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),
-              React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})
-            ),
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),
-              React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'})
-            )
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})),
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'}))
           ),
           React.createElement('div',{className:'grid grid-cols-2 mb-6'},
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),
-              React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})
-            ),
-            React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),
-              React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'})
-            )
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})),
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'}))
           ),
-          CHECKLIST.sections.map(sec => React.createElement('div',{key:sec.id,className:'section'},
+          CHECKLIST.sections.map(sec=>React.createElement('div',{key:sec.id,className:'section'},
             React.createElement('h2',null,sec.title),
+            React.createElement('table',null,React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),React.createElement('tbody',null,sec.items.map(it=>{const r=resp[it.id];return React.createElement('tr',{key:it.id},React.createElement('td',null,it.question),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})})));})),),
             React.createElement('input',{type:'file',accept:'image/*',capture:'environment',multiple:true,onChange:e=>handleImage(sec.id,e)}),
-            React.createElement('div',null,(sectionImages[sec.id]||[]).map((src,i)=>React.createElement('img',{key:i,src:src,className:'photo-preview'}))),
-            React.createElement('table',null,
-              React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),
-              React.createElement('tbody',null,sec.items.map(it => {
-                const r = resp[it.id];
-                return React.createElement('tr',{key:it.id},
-                  React.createElement('td',null,it.question),
-                  React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),
-                  React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),
-                  React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})}))
-                );
-              }))
-            )
+            React.createElement('div',null,(sectionImages[sec.id]||[]).map((src,i)=>React.createElement('img',{key:i,src:src,className:'photo-preview'})))
           )),
           React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
         )
