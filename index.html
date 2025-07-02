@@ -106,7 +106,33 @@
         const auditorName=params.get('name')||'';
         const auditorId=params.get('id')||'';
         try{await fetch('https://script.google.com/macros/s/AKfycby4oEhip48o_sQXoiZd0kOdkGTyiK9XeEfZkLdcKqY8Yaxy0qQP6B6CnycBZvUlry2N/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({auditorName,auditorId,storeName,storeId,totalScore,percentage})});}catch(err){console.error(err);}
-        try{const{jsPDF}=window.jspdf;const doc=new jsPDF();let y=10;doc.setFontSize(14);doc.text(`Training Audit Report | ${storeName}`,105,y,{align:'center'});y+=6;doc.setFontSize(10);doc.text(`Auditor: ${auditorName} (ID ${auditorId})`,10,y);y+=6;doc.text(`Store: ${storeName} (ID ${storeId})`,10,y);y+=6;doc.text(`Score: ${totalScore} / ${maxScore} (${percentage}%)`,10,y);y+=8;CHECKLIST.sections.forEach(sec=>{const imgsList=imgs[sec.id]||[];if(imgsList.length){doc.setFontSize(11);doc.text(sec.title,10,y);y+=4;imgsList.forEach(src=>{doc.addImage(src,'JPEG',10,y,40,30);y+=32;if(y>250){doc.addPage();y=20;}});y+=4;}});const rows=[];CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{const r=responses[it.id]||{score:0,na:false};rows.push([sec.title,it.q,r.na?'NA':(r.score===it.w?'Yes':'No')]);}));doc.autoTable({head:[['Section','Question','Response']],body:rows,startY:y,styles:{fontSize:8},headStyles:{fillColor:[50,50,150]}});doc.save(`audit_${auditorId}_${Date.now()}.pdf`);}catch(err){console.error(err);}localStorage.clear();};
+        try{const{jsPDF}=window.jspdf;const doc=new jsPDF();let y=10;doc.setFontSize(14);doc.text(`Training Audit Report | ${storeName}`,105,y,{align:'center'});y+=6;doc.setFontSize(10);doc.text(`Auditor: ${auditorName} (ID ${auditorId})`,10,y);y+=6;doc.text(`Store: ${storeName} (ID ${storeId})`,10,y);y+=6;doc.text(`Score: ${totalScore} / ${maxScore} (${percentage}%)`,10,y);y+=8;// Add images at original aspect ratio preserving orientation
+        for (const sec of CHECKLIST.sections) {
+          const imgsList = imgs[sec.id] || [];
+          if (imgsList.length) {
+            doc.setFontSize(11);
+            doc.text(sec.title, 10, y);
+            y += 4;
+            for (const src of imgsList) {
+              const imgEl = await new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = src;
+              });
+              const pageWidth = doc.internal.pageSize.getWidth() - 20;
+              const ratio = imgEl.width / imgEl.height;
+              const imgWidth = Math.min(pageWidth, imgEl.width);
+              const imgHeight = imgWidth / ratio;
+              doc.addImage(imgEl, 'JPEG', 10, y, imgWidth, imgHeight);
+              y += imgHeight + 4;
+              if (y > doc.internal.pageSize.getHeight() - 20) {
+                doc.addPage();
+                y = 20;
+              }
+            }
+            y += 4;
+          }
+        };doc.autoTable({head:[['Section','Question','Response']],body:rows,startY:y,styles:{fontSize:8},headStyles:{fillColor:[50,50,150]}});doc.save(`audit_${auditorId}_${Date.now()}.pdf`);}catch(err){console.error(err);}localStorage.clear();};
 
       return React.createElement('form',{onSubmit:handleSubmit,className:'space-y-6'},
         React.createElement('h1',{className:'text-3xl font-bold text-center mb-6'},'Training Audit Checklist'),
