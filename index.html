@@ -2,27 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Training Audit Checklist</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    body { background: #f3f4f6; font-family: sans-serif; margin: 0; }
-    .container { max-width: 800px; margin: 2rem auto; background: #fff; padding: 1rem; border-radius: .5rem; }
-    .title { text-align: center; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
-    th, td { border: 1px solid #e5e7eb; padding: .5rem; }
-    th { background-color: #e5e7eb; }
-    input[type=radio] { margin-right: .25rem; }
-    .photo-preview { max-width: 100px; margin-right: .5rem; margin-bottom: .5rem; border-radius: .25rem; }
-    .submit-btn { background: #4f46e5; color: #fff; padding: .75rem 1.5rem; border: none; border-radius: .375rem; cursor: pointer; }
-  </style>
 </head>
-<body>
-  <div class="container" id="root"></div>
+<body class="bg-gray-100 p-4">
+  <div id="root" class="container mx-auto"></div>
   <script>
     const { useState, useEffect } = React;
     const CHECKLIST = { sections: [
@@ -34,7 +21,7 @@
         { id: 'TM_5', q: 'Dial-in One-pager visible?', w: 2 },
         { id: 'TM_6', q: 'New-launch learning material posted?', w: 1 },
         { id: 'TM_7', q: 'COFFEE and HD Playbook in store?', w: 1 },
-        { id: 'TM_8', q: 'Shelf-life chart, MSDS (material safety data sheet), chemical dilution chart available?', w: 1 },
+        { id: 'TM_8', q: 'Shelf-life chart, MSDS, chemical dilution chart available?', w: 1 },
         { id: 'TM_9', q: 'Career progression chart & Reward poster displayed?', w: 1 }
       ]},
       { id: 'LMS', title: 'LMS Usage', items: [
@@ -43,7 +30,7 @@
         { id: 'LMS_3', q: 'Is the team using LMS for new info & communication?', w: 2 }
       ]},
       { id: 'Buddy', title: 'Buddy Trainer Capabilities', items: [
-        { id: 'Buddy_1', q: 'Area at least 20% of total staff are certified Buddy Trainers?', w: 2 },
+        { id: 'Buddy_1', q: 'Are at least 20% of total staff are certified Buddy Trainers?', w: 2 },
         { id: 'Buddy_2', q: 'Have Buddy Trainers passed skill checks?', w: 2 },
         { id: 'Buddy_3', q: 'Trainees rostered with Buddy Trainers for the same shift?', w: 1 },
         { id: 'Buddy_4', q: 'Have Buddy Trainers attended the BT workshop?', w: 2 },
@@ -67,7 +54,7 @@
         { id: 'PK_4', q: 'Is coffee tasting engaging & effective?', w: 2 },
         { id: 'PK_5', q: 'Is the team aware of manual brew standards and methods?', w: 2 },
         { id: 'PK_6', q: 'Is the team groomed as per standards?', w: 2 },
-        { id: 'PK_7', q: 'Ask questions about key topics: COFFEE, LEAST, ROAST, Dial-in, Milk Steaming, LTO, Values (RESPECT), MSDS, Chemical Dilution, Food Safety, and Security.', w: 3 }
+        { id: 'PK_7', q: 'Ask questions about key topics: COFFEE, LEAST, ROAST, Dial-in, Milk Steaming, LTO, Values, MSDS, Chemical Dilution, Food Safety, Security.', w: 3 }
       ]},
       { id: 'TSA', title: 'Skill Assessment', items: [
         { id: 'TSA_1', q: 'Hot & Cold stations working?', w: 1 },
@@ -79,112 +66,61 @@
         { id: 'CX_2', q: 'Is the store temperature comfortable?', w: 1 },
         { id: 'CX_3', q: 'Are the washrooms clean & well maintained?', w: 1 },
         { id: 'CX_4', q: 'Is Wi-Fi available and working?', w: 1 },
-        { id: 'CX_5', q: 'Are marketing elements & displays (Merchandise rack and FDU) appropriate as per VM guide?', w: 2 },
-        { id: 'CX_6', q: 'Is the store furniture clean & well-kept?', w: 1 },
-        { id: 'CX_7', q: 'Ask: What do you understand by MA, CPI, Google, HD, QA, and App Feedback Scores?', w: 1 },
+        { id: 'CX_5', q: 'Are marketing elements & displays appropriate as per VM guide?', w: 2 },
+        { id: 'CX_6', q: 'Is furniture clean & well-kept?', w: 1 },
+        { id: 'CX_7', q: 'Ask: What do you understand by MA, CPI, QA, App Feedback Scores?', w: 1 },
         { id: 'CX_8', q: 'Ask: What was the latest Mystery Audit score for the store?', w: 1 },
-        { id: 'CX_9', q: 'Ask: What were the top two opportunity areas in Customer Experience (last month)?', w: 1 }
+        { id: 'CX_9', q: 'Ask: Top two opportunity areas in CX (last month)?', w: 1 }
       ]},
       { id: 'AP', title: 'Action Plan', items: [
-        { id: 'AP_1', q: 'Have concerns from the action plan been addressed or are they in progress?', w: 2 },
-        { id: 'AP_2', q: 'Are all managers aware of the action plan and necessary actions?', w: 3 }
+        { id: 'AP_1', q: 'Have concerns from action plan been addressed or in progress?', w: 2 },
+        { id: 'AP_2', q: 'Are all managers aware of action plan and actions?', w: 3 }
       ]}
     ]};
 
-    function freshResp() {
-      const o = {};
-      CHECKLIST.sections.forEach(s => s.items.forEach(i => o[i.id] = { score: null, na: false }));
-      return o;
-    }
-
     function App() {
-      console.log('Checklist Questions:', CHECKLIST.sections.map(s => ({ section: s.title, questions: s.items.map(i => i.q) })));
+      const [storeName, setStoreName] = useState(localStorage.getItem('storeName') || '');
+      const [storeId, setStoreId] = useState(localStorage.getItem('storeId') || '');
+      const [responses, setResponses] = useState(JSON.parse(localStorage.getItem('responses')) || {});
+      const [imgs, setImgs] = useState(JSON.parse(localStorage.getItem('imgs')) || {});
+
+      useEffect(() => {
+        localStorage.setItem('storeName', storeName);
+        localStorage.setItem('storeId', storeId);
+        localStorage.setItem('responses', JSON.stringify(responses));
+        localStorage.setItem('imgs', JSON.stringify(imgs));
+      }, [storeName, storeId, responses, imgs]);
+
+      const updateResp = (id, score, na) => setResponses(prev => ({ ...prev, [id]: { score, na } }));
+      const pick = (sid, e) => Array.from(e.target.files).forEach(f => { const r = new FileReader(); r.onload = () => setImgs(prev => ({ ...prev, [sid]: [...(prev[sid] || []), r.result] })); r.readAsDataURL(f); });
+      const handleSubmit = e => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); alert('Report downloaded'); localStorage.clear(); };
       const params = new URLSearchParams(window.location.search);
-      const auditor = { name: params.get('name')||'', id: params.get('id')||'' };
-      const KEY = `audit_${auditor.id}`;
-      const [resp, setResp] = useState(() => {
-        try { return JSON.parse(localStorage.getItem(KEY))||freshResp(); } catch { return freshResp(); }
-      });
-      const [storeName, setStoreName] = useState('');
-      const [storeId, setStoreId] = useState('');
-      const [imgs, setImgs] = useState({});
+      const auditorName = params.get('name') || '';
+      const auditorId = params.get('id') || '';
 
-      useEffect(() => localStorage.setItem(KEY, JSON.stringify(resp)), [resp]);
-      const upd = (id, p) => setResp(r => ({ ...r, [id]: { ...r[id], ...p } }));
-      const pick = (sid, e) => Array.from(e.target.files).forEach(f => {
-        const r = new FileReader();
-        r.onload = () => setImgs(i => ({ ...i, [sid]: [...(i[sid]||[]), r.result] }));
-        r.readAsDataURL(f);
-      });
-
-      const submit = e => {
-        e.preventDefault();
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        let t=0, m=0;
-        CHECKLIST.sections.forEach(s => s.items.forEach(i => {
-          const v=resp[i.id]||{};
-          if(!v.na&&v.score!=null){t+=v.score; m+=i.w;}
-        }));
-        const score = `${t}/${m} (${m?Math.round(100*t/m):0}%)`;
-        doc.text(`Score: ${score}`, 14, 14);
-        doc.text(`Report | ${storeName}`, 14, 22);
-        let y = 30;
-        CHECKLIST.sections.forEach(s => {
-          doc.setFontSize(12);
-          doc.text(s.title, 14, y);
-          y += 6;
-          (imgs[s.id]||[]).forEach(img => {
-            doc.addImage(img,'JPEG',14,y,50,30);
-            y += 32;
-          });
-          const rows = s.items.map(i => {
-            const v=resp[i.id]||{};
-            return [i.q, v.na?'NA':(v.score===i.w?'Yes':'No')];
-          });
-          doc.autoTable({ startY: y, head:[['Question','Resp']], body: rows, styles:{fontSize:8} });
-          y = doc.lastAutoTable.finalY + 10;
-        });
-        doc.save(`audit_${auditor.id}_${Date.now()}.pdf`);
-      };
-
-      return React.createElement('form',{onSubmit:submit},
-        React.createElement('div',{className:'container'},
-          React.createElement('h1',{className:'title'},'Third Wave Coffee | Training Audit'),
-          React.createElement('div',{className:'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'},
-            React.createElement('div',null,
-              React.createElement('label',{className:'block mb-1 font-medium'},'Auditor Name'),
-              React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})
-            ),
-            React.createElement('div',null,
-              React.createElement('label',{className:'block mb-1 font-medium'},'Auditor ID'),
-              React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'})
-            ),
-            React.createElement('div',null,
-              React.createElement('label',{className:'block mb-1 font-medium'},'Store Name'),
-              React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})
-            ),
-            React.createElement('div',null,
-              React.createElement('label',{className:'block mb-1 font-medium'},'Store ID'),
-              React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'})
-            )
-          ),
-          CHECKLIST.sections.map(s => React.createElement('div',{key:s.id,className:'section mb-6'},
-            React.createElement('h2',null,s.title),
-            React.createElement('input',{type:'file',accept:'image/*',capture:'environment',multiple:true,onChange:e=>pick(s.id,e)}),
-            React.createElement('div',null,(imgs[s.id]||[]).map((src,i)=>React.createElement('img',{key:i,src, className:'photo-preview'}))),
-            React.createElement('table',null,
-              React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),
-              React.createElement('tbody',null,s.items.map(i => React.createElement('tr',{key:i.id},
-                React.createElement('td',null,i.q),
-                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:i.id,value:'yes',required:true,checked:resp[i.id]?.score===i.w,onChange:() => upd(i.id,{score:i.w,na:false})})),
-                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:i.id,value:'no',checked:resp[i.id]?.score===0&&!resp[i.id]?.na,onChange:() => upd(i.id,{score:0,na:false})})),
-                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:i.id,value:'na',checked:resp[i.id]?.na,onChange:() => upd(i.id,{na:true,score:null})}))
-              )))
-            )
-          )),
-          React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
-        )
+      return React.createElement('form', { onSubmit: handleSubmit, className: 'space-y-6' },
+        React.createElement('h1', { className: 'text-3xl font-bold text-center mb-6' }, 'Training Audit Checklist'),
+        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
+          React.createElement('input', { type: 'text', value: auditorName, readOnly: true, placeholder: 'Auditor Name', className: 'p-2 border rounded bg-gray-200' }),
+          React.createElement('input', { type: 'text', value: auditorId, readOnly: true, placeholder: 'Auditor ID', className: 'p-2 border rounded bg-gray-200' }),
+          React.createElement('input', { type: 'text', placeholder: 'Store Name', required: true, value: storeName, onChange: e => setStoreName(e.target.value), className: 'p-2 border rounded' }),
+          React.createElement('input', { type: 'text', placeholder: 'Store ID', required: true, value: storeId, onChange: e => setStoreId(e.target.value), className: 'p-2 border rounded' })
+        ),
+        CHECKLIST.sections.map(section => React.createElement('div', { key: section.id, className: 'p-4 bg-white rounded shadow' },
+          React.createElement('h2', { className: 'font-bold text-center mb-4' }, section.title),
+          React.createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', multiple: true, onChange: e => pick(section.id, e), className: 'mb-4' }),
+          React.createElement('div', null, (imgs[section.id] || []).map((src, idx) => React.createElement('img', { key: idx, src, className: 'max-w-xs mb-2 rounded' }))),
+          section.items.map(item => {
+            const resp = responses[item.id] || { score: null, na: false };
+            return React.createElement('div', { key: item.id, className: 'flex items-center space-x-4 mb-2' },
+              React.createElement('span', { className: 'flex-1' }, item.q),
+              React.createElement('label', { className: 'inline-flex items-center space-x-1' }, React.createElement('input', { type: 'radio', name: item.id, required: true, checked: !resp.na && resp.score === item.w, onChange: () => updateResp(item.id, item.w, false) }), React.createElement('span', null, 'Yes')),
+              React.createElement('label', { className: 'inline-flex items-center space-x-1' }, React.createElement('input', { type: 'radio', name: item.id, checked: !resp.na && resp.score === 0, onChange: () => updateResp(item.id, 0, false) }), React.createElement('span', null, 'No')),
+              React.createElement('label', { className: 'inline-flex items-center space-x-1' }, React.createElement('input', { type: 'checkbox', checked: resp.na, onChange: e => updateResp(item.id, 0, e.target.checked) }), React.createElement('span', null, 'NA'))
+            );
+          })
+        )),
+        React.createElement('button', { type: 'submit', className: 'submit-btn w-full bg-green-500 hover:bg-green-600 text-white' }, 'Submit & Download PDF')
       );
     }
     ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
