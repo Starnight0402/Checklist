@@ -1,18 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Training Audit Checklist</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-gray-50 p-6">
-  <div id="root" class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6"></div>
-  <script>
+  <div id="root" class="max-w-full mx-auto bg-white shadow-xl rounded-xl p-6"></div>
+  <script type="text/babel">
     const { useState, useEffect } = React;
     const CHECKLIST = { sections: [
       { id: 'Training Materials', title: 'Training Materials', items: [
@@ -59,9 +60,9 @@
         { id: 'PK_7', q: 'Pop-quiz passed?', w: 1 }
       ]},
       { id: 'TSA', title: 'Skill Assessment', items: [
-        { id: 'TSA_1', q: 'Hot & Cold stations', w: 1 },
-        { id: 'TSA_2', q: 'Food station', w: 1 },
-        { id: 'TSA_3', q: 'Customer Service', w: 1 }
+        { id: 'TSA_1', q: 'Hot & Cold stations working?', w: 1 },
+        { id: 'TSA_2', q: 'Food station cleanliness?', w: 1 },
+        { id: 'TSA_3', q: 'Customer Service quality?', w: 1 }
       ]},
       { id: 'CX', title: 'Customer Experience', items: [
         { id: 'CX_1', q: 'Music at right volume?', w: 1 },
@@ -80,7 +81,7 @@
       ]}
     ]};
 
-    function App() {
+    function AuditForm() {
       const [storeName, setStoreName] = useState(localStorage.getItem('storeName') || '');
       const [storeId, setStoreId] = useState(localStorage.getItem('storeId') || '');
       const [responses, setResponses] = useState(JSON.parse(localStorage.getItem('responses')) || {});
@@ -94,15 +95,19 @@
       }, [storeName, storeId, responses, imgs]);
 
       const updateResp = (id, score, na) => setResponses(prev => ({ ...prev, [id]: { score, na } }));
-      const pick = (sid, e) => Array.from(e.target.files).forEach(f => {
-        const reader = new FileReader();
-        reader.onload = () => setImgs(prev => ({ ...prev, [sid]: [...(prev[sid] || []), reader.result] }));
-        reader.readAsDataURL(f);
-      });
+      const pickImages = (sectionId, e) => {
+        Array.from(e.target.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = () => setImgs(prev => ({
+            ...prev,
+            [sectionId]: [...(prev[sectionId] || []), reader.result]
+          }));
+          reader.readAsDataURL(file);
+        });
+      };
 
       const handleSubmit = async e => {
         e.preventDefault();
-        if (navigator.vibrate) navigator.vibrate(50);
         let total = 0, max = 0;
         CHECKLIST.sections.forEach(sec => sec.items.forEach(it => {
           const r = responses[it.id] || { score: 0, na: false };
@@ -112,118 +117,124 @@
         const params = new URLSearchParams(window.location.search);
         const auditorName = params.get('name') || '';
         const auditorId = params.get('id') || '';
-        await fetch('https://script.google.com/macros/s/AKfycby4oEhip48o_sQXoiZd0kOdkGTyiK9XeEfZkLdcKqY8Yaxy0qQP6B6CnycBZvUlry2N/exec', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ auditorName, auditorId, storeName, storeId, total, pct })
-        });
+
+        try {
+          const res = await fetch('https://script.google.com/macros/s/AKfycby4oEhip48o_sQXoiZd0kOdkGTyiK9XeEfZkLdcKqY8Yaxy0qQP6B6CnycBZvUlry2N/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auditorName, auditorId, storeName, storeId, total, pct })
+          });
+          if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+        } catch (err) {
+          alert('Error logging results. PDF will not be generated.');
+          console.error(err);
+          return;
+        }
+
         try {
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF();
-          let y = 10;
-          doc.setFontSize(14);
-          doc.text(`Training Audit Report | ${storeName}`, 105, y, { align: 'center' });
-          y += 8;
+          doc.setFontSize(16);
+          doc.text(`Training Audit Report | ${storeName}`, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
           doc.setFontSize(10);
-          doc.text(`Auditor: ${auditorName} (ID ${auditorId})`, 10, y);
-          doc.text(`Store: ${storeName} (ID ${storeId})`, 110, y);
-          y += 6;
-          doc.text(`Score: ${total} / ${max} (${pct}%)`, 10, y);
-          y += 10;
-          for (const sec of CHECKLIST.sections) {
-            doc.setFontSize(12);
-            doc.setTextColor(33, 33, 33);
-            doc.text(sec.title, 10, y);
-            y += 6;
-            const imgsList = imgs[sec.id] || [];
-            let imgX = 10;
-            for (const src of imgsList) {
-              doc.addImage(src, 'JPEG', imgX, y, 30, 30);
-              imgX += 35;
-              if (imgX > doc.internal.pageSize.getWidth() - 40) break;
-            }
-            if (imgsList.length) y += 35;
-            const rows = sec.items.map(it => {
-              const r = responses[it.id] || { score: 0, na: false };
-              const ans = r.na ? 'NA' : (r.score === it.w ? 'Yes' : 'No');
-              const mark = r.na ? 'NA' : r.score;
-              return [it.q, ans, mark];
-            });
-            doc.autoTable({
-              startY: y,
-              head: [['Question', 'Response', 'Marks']],
-              body: rows,
-              styles: { fontSize: 9 },
-              headStyles: { fillColor: [50, 50, 150] },
-              columnStyles: { 0: { cellWidth: 100 }, 1: { cellWidth: 30, halign: 'center' }, 2: { cellWidth: 20, halign: 'center' } }
-            });
-            y = doc.lastAutoTable.finalY + 10;
-            if (y > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); y = 20; }
-          }
-          doc.save(`audit_${auditorId}_${Date.now()}.pdf`);
+          doc.text(`Auditor: ${auditorName} (ID ${auditorId})`, 20, 40);
+          doc.text(`Store: ${storeName} (ID ${storeId})`, 140, 40);
+          doc.text(`Score: ${total} / ${max} (${pct}%)`, 260, 40);
+
+          const rows = [];
+          CHECKLIST.sections.forEach(sec => sec.items.forEach(it => {
+            const r = responses[it.id] || { score: 0, na: false };
+            rows.push([sec.title, it.q, r.na ? 'NA' : (r.score === it.w ? 'Yes' : 'No'), r.score]);
+          }));
+
+          doc.autoTable({
+            startY: 60,
+            head: [['Section', 'Question', 'Response', 'Score']],
+            body: rows,
+            styles: { fontSize: 9, cellPadding: 4 },
+            headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], halign: 'center' }
+          });
+
           alert('Report downloaded');
-        } catch (err) { console.error(err); }
+          doc.save(`audit_${auditorId}_${Date.now()}.pdf`);
+        } catch (err) {
+          console.error(err);
+        }
+
         localStorage.clear();
       };
 
-      return React.createElement('form', { onSubmit: handleSubmit, className: 'space-y-6' },
-        React.createElement('h1', { className: 'text-3xl font-bold text-center mb-6' }, 'Training Audit Checklist'),
-        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
-          React.createElement('input', { type: 'text', value: new URLSearchParams(window.location.search).get('name') || '', readOnly: true, placeholder: 'Auditor Name', className: 'p-2 border rounded bg-gray-200' }),
-          React.createElement('input', { type: 'text', value: new URLSearchParams(window.location.search).get('id') || '', readOnly: true, placeholder: 'Auditor ID', className: 'p-2 border rounded bg-gray-200' }),
-          React.createElement('input', { type: 'text', placeholder: 'Store Name', required: true, value: storeName, onChange: e => setStoreName(e.target.value), className: 'p-2 border rounded' }),
-          React.createElement('input', { type: 'text', placeholder: 'Store ID', required: true, value: storeId, onChange: e => setStoreId(e.target.value), className: 'p-2 border rounded' })
-        ),
-        CHECKLIST.sections.map(sec => React.createElement('div', { key: sec.id, className: 'bg-white p-4 rounded shadow-xl mb-6' },
-          React.createElement('h2', { className: 'text-xl font-semibold text-center mb-4' }, sec.title),
-          React.createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', multiple: true, onChange: e => pick(sec.id, e), className: 'mb-4' }),
-          React.createElement('div', null, (imgs[sec.id] || []).map((src, idx) => React.createElement('img', { key: idx, src, className: 'max-w-xs mb-2 rounded shadow-lg' }))),
-          React.createElement('table', { className: 'w-full table-auto mb-4 border-collapse border border-gray-300' },
-            React.createElement('thead', null, React.createElement('tr', null,
-              React.createElement('th', { className: 'border p-2' }, 'Question'),
-              React.createElement('th', { className: 'border p-2' }, 'Yes'),
-              React.createElement('th', { className: 'border p-2' }, 'No'),
-              React.createElement('th', { className: 'border p-2' }, 'NA')
-            )),
-            React.createElement('tbody', null, sec.items.map(item => {
-              const r = responses[item.id] || { score: null, na: false };
-              return React.createElement('tr', { key: item.id, className: 'odd:bg-gray-50 hover:bg-gray-100' },
-                React.createElement('td', { className: 'border p-2' }, item.q),
-                ['Yes', 'No', 'NA'].map(label => {
-                  const isYes = label === 'Yes';
-                  const isNo = label === 'No';
-                  const isNA = label === 'NA';
-                  const selected = isYes && r.score === item.w || isNo && r.score === 0 && !r.na || isNA && r.na;
-                  const onClick = () => {
-                    if (isYes) updateResp(item.id, item.w, false);
-                    if (isNo) updateResp(item.id, 0, false);
-                    if (isNA) updateResp(item.id, 0, true);
-                  };
-                  let colors;
-                  if (selected) {
-                    if (isYes) colors = 'bg-green-200 text-green-900';
-                    else if (isNo) colors = 'bg-red-200 text-red-900';
-                    else colors = 'bg-amber-200 text-amber-900';
-                  } else {
-                    colors = 'bg-gray-200 text-gray-700';
-                  }
-                  return React.createElement('td', { key: label, className: 'border p-2 text-center' },
-                    React.createElement('button', { type: 'button', className: `${colors} px-3 py-1 rounded-md focus:outline-none`, onClick }, label)
-                  );
-                })
-              );
-            }))
-          )
-        )),
-        React.createElement('button', { type: 'submit', className: 'submit-btn w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg shadow-md flex items-center justify-center' },
-          'Submit & Download PDF',
-          React.createElement('svg', { xmlns: 'http://www.w3.org/2000/svg', className: 'h-5 w-5 ml-2', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
-            React.createElement('path', { 'stroke-linecap':'round','stroke-linejoin':'round','stroke-width':'2', d:'M4 16v1a1 1 0 001 1h14a1 1 0 001-1v-1M12 12v8m0-8l-3 3m3-3l3 3' })
-          )
-        )
+      return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <h1 className="text-3xl font-bold text-center mb-4">Training Audit Checklist</h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <input type="text" readOnly value={new URLSearchParams(window.location.search).get('name') || ''} placeholder="Auditor Name" className="p-2 border rounded bg-gray-200" />
+            <input type="text" readOnly value={new URLSearchParams(window.location.search).get('id') || ''} placeholder="Auditor ID" className="p-2 border rounded bg-gray-200" />
+            <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} required placeholder="Store Name" className="p-2 border rounded" />
+            <input type="text" value={storeId} onChange={e => setStoreId(e.target.value)} required placeholder="Store ID" className="p-2 border rounded" />
+          </div>
+          {CHECKLIST.sections.map(section => (
+            <section key={section.id} className="bg-white p-4 rounded shadow mb-6">
+              <h2 className="text-xl font-semibold text-center mb-4">{section.title}</h2>
+              <input type="file" accept="image/*" capture="environment" multiple onChange={e => pickImages(section.id, e)} className="mb-4" />
+              <div className="flex space-x-2 mb-4">
+                {(imgs[section.id] || []).map((src, idx) => (
+                  <img key={idx} src={src} alt="preview" className="w-12 h-12 object-cover rounded shadow" />
+                ))}
+              </div>
+              <table className="w-full table-auto border-collapse border border-gray-300">
+                <thead>
+                  <tr>
+                    <th className="border p-2">Question</th>
+                    <th className="border p-2">Yes</th>
+                    <th className="border p-2">No</th>
+                    <th className="border p-2">NA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {section.items.map(item => {
+                    const r = responses[item.id] || { score: null, na: false };
+                    return (
+                      <tr key={item.id} className="odd:bg-gray-50 hover:bg-gray-100">
+                        <td className="border p-2">{item.q}</td>
+                        {['Yes','No','NA'].map(label => {
+                          const isYes = label === 'Yes';
+                          const isNo = label === 'No';
+                          const isNA = label === 'NA';
+                          const selected = (isYes && r.score === item.w) || (isNo && r.score === 0 && !r.na) || (isNA && r.na);
+                          let btnClasses = selected
+                            ? isYes
+                              ? 'bg-green-200 text-green-900'
+                              : isNo
+                                ? 'bg-red-200 text-red-900'
+                                : 'bg-amber-200 text-amber-900'
+                            : 'bg-gray-200 text-gray-700';
+                          return (
+                            <td key={label} className="border p-2 text-center">
+                              <button type="button" className={`px-3 py-1rounded ${btnClasses}`} onClick={() => updateResp(item.id, isYes ? item.w : 0, isNA)}>
+                                {label}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </section>
+          ))}
+          <button type="submit" className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg shadow flex items-center justify-center">
+            Submit & Download PDF
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a1 1 0 001 1h14a1 1 0 001-1v-1M12 12v8m0-8l-3 3m3-3l3 3" />
+            </svg>
+          </button>
+        </form>
       );
     }
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AuditForm />);
   </script>
 </body>
 </html>
