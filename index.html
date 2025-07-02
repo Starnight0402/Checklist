@@ -84,17 +84,41 @@
       const [storeName, setStoreName] = useState(localStorage.getItem('storeName')||'');
       const [storeId, setStoreId] = useState(localStorage.getItem('storeId')||'');
       const [responses, setResponses] = useState(JSON.parse(localStorage.getItem('responses'))||{});
-      const [imgs, setImgs] = useState(JSON.parse(localStorage.getItem('imgs'))||{});
+      const [imgs, setImgs] = useState({});
 
       useEffect(()=>{
         localStorage.setItem('storeName', storeName);
         localStorage.setItem('storeId', storeId);
         localStorage.setItem('responses', JSON.stringify(responses));
-        localStorage.setItem('imgs', JSON.stringify(imgs));
-      },[storeName,storeId,responses,imgs]);
+      },[storeName,storeId,responses]);
 
       const updateResp=(id,score,na)=>setResponses(prev=>({...prev,[id]:{score,na}}));
-      const pick=(sid,e)=>{Array.from(e.target.files).forEach(f=>{const r=new FileReader();r.onload=()=>setImgs(prev=>({...prev,[sid]:[...(prev[sid]||[]),r.result]}));r.readAsDataURL(f);});};
+      const pick=(sid,e)=>{
+        Array.from(e.target.files).forEach(f=>{
+          const reader=new FileReader();
+          reader.onload=()=>{
+            const img=new Image();
+            img.onload=()=>{
+              const max=1024;
+              let {width,height}=img;
+              if(width>max||height>max){
+                const ratio=Math.min(max/width,max/height);
+                width*=ratio;height*=ratio;
+              }
+              const canvas=document.createElement('canvas');
+              canvas.width=width;
+              canvas.height=height;
+              const ctx=canvas.getContext('2d');
+              ctx.drawImage(img,0,0,width,height);
+              const type=f.type||'image/jpeg';
+              const dataUrl=canvas.toDataURL(type,type==='image/jpeg'?0.8:1.0);
+              setImgs(prev=>({...prev,[sid]:[...(prev[sid]||[]),dataUrl]}));
+            };
+            img.src=reader.result;
+          };
+          reader.readAsDataURL(f);
+        });
+      };
 
       const handleSubmit=async e=>{
         e.preventDefault();
@@ -124,7 +148,9 @@
               const ratio = imgEl.width / imgEl.height;
               const imgWidth = Math.min(pageWidth, imgEl.width);
               const imgHeight = imgWidth / ratio;
-              doc.addImage(imgEl, 'JPEG', 10, y, imgWidth, imgHeight);
+              const fmtMatch = src.match(/^data:(image\/[^;]+);/);
+              const format = fmtMatch ? fmtMatch[1].split('/')[1].toUpperCase() : 'JPEG';
+              doc.addImage(imgEl, format, 10, y, imgWidth, imgHeight);
               y += imgHeight + 4;
               if (y > doc.internal.pageSize.getHeight() - 20) {
                 doc.addPage();
