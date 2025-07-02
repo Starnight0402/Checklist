@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Training Audit Checklist</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -12,71 +12,73 @@
   <div id="root" class="container mx-auto"></div>
   <script>
     const { useState, useEffect } = React;
-    const CHECKLIST = { sections: [
-      { id: 'Training Materials', title: 'Training Materials', items: [
-        { id: 'TM_1', q: 'FRM available at store?', w: 1 },
-        { id: 'TM_2', q: 'BRM available at store?', w: 1 },
-        { id: 'TM_3', q: 'One-pager – Hot/Cue Cards displayed?', w: 1 },
-        { id: 'TM_4', q: 'One-pager – Cold/Cue Cards displayed?', w: 1 },
-        { id: 'TM_5', q: 'Dial-in One-pager visible?', w: 2 },
-        { id: 'TM_6', q: 'New-launch learning material posted?', w: 1 },
-        { id: 'TM_7', q: 'COFFEE and HD Playbook in store?', w: 1 },
-        { id: 'TM_8', q: 'Shelf-life chart, MSDS, chemical dilution chart available?', w: 1 },
-        { id: 'TM_9', q: 'Career progression chart & Reward poster displayed?', w: 1 }
-      ]},
-      { id: 'LMS', title: 'LMS Usage', items: [
-        { id: 'LMS_1', q: 'Orientation & Induction completed within 3 days?', w: 4 },
-        { id: 'LMS_2', q: 'Are all assessments & knowledge checks completed using LMS?', w: 4 },
-        { id: 'LMS_3', q: 'Is the team using LMS for new info & communication?', w: 2 }
-      ]},
-      { id: 'Buddy', title: 'Buddy Trainer Capabilities', items: [
-        { id: 'Buddy_1', q: 'Are at least 20% of total staff are certified Buddy Trainers?', w: 2 },
-        { id: 'Buddy_2', q: 'Have Buddy Trainers passed skill checks?', w: 2 },
-        { id: 'Buddy_3', q: 'Trainees rostered with Buddy Trainers for the same shift?', w: 1 },
-        { id: 'Buddy_4', q: 'Have Buddy Trainers attended the BT workshop?', w: 2 },
-        { id: 'Buddy_5', q: 'Can Buddy Trainers explain the 4-step training process effectively?', w: 2 },
-        { id: 'Buddy_6', q: 'Can Buddy Trainers navigate ZingLMS flawlessly?', w: 1 },
-        { id: 'Buddy_7', q: 'Monthly feedback sessions conducted?', w: 1 }
-      ]},
-      { id: 'NewJoiner', title: 'New Joiner Training', items: [
-        { id: 'NJ_1', q: 'Is the OJT book available for all partners?', w: 1 },
-        { id: 'NJ_2', q: 'Are trainees referring to the OJT book and completing skill checks with the Store Manager?', w: 2 },
-        { id: 'NJ_3', q: 'Is training progression aligned with the training calendar/plan?', w: 3 },
-        { id: 'NJ_4', q: 'Are team members aware of post-barista training progression?', w: 1 },
-        { id: 'NJ_5', q: 'Have members completed SHLP training as per the calendar?', w: 1 },
-        { id: 'NJ_6', q: 'Are there at least 2 FOSTAC certified managers in the store?', w: 1 },
-        { id: 'NJ_7', q: 'Is ASM/SM training completed as per the training calendar?', w: 1 }
-      ]},
-      { id: 'Partner', title: 'Partner Knowledge', items: [
-        { id: 'PK_1', q: 'Are team members updated with the latest communication?', w: 2 },
-        { id: 'PK_2', q: 'Ask a team member to conduct a coffee tasting and sampling session.', w: 2 },
-        { id: 'PK_3', q: 'Is sampling conducted as per set guidelines?', w: 2 },
-        { id: 'PK_4', q: 'Is coffee tasting engaging & effective?', w: 2 },
-        { id: 'PK_5', q: 'Is the team aware of manual brew standards and methods?', w: 2 },
-        { id: 'PK_6', q: 'Is the team groomed as per standards?', w: 2 },
-        { id: 'PK_7', q: 'Ask questions about key topics: COFFEE, LEAST, ROAST, Dial-in, Milk Steaming, LTO, Values, MSDS, Chemical Dilution, Food Safety, Security.', w: 3 }
-      ]},
-      { id: 'TSA', title: 'Skill Assessment', items: [
-        { id: 'TSA_1', q: 'Hot & Cold stations working?', w: 1 },
-        { id: 'TSA_2', q: 'Food station cleanliness?', w: 1 },
-        { id: 'TSA_3', q: 'Customer Service quality?', w: 1 }
-      ]},
-      { id: 'CX', title: 'Customer Experience', items: [
-        { id: 'CX_1', q: 'Is appropriate music playing at right volume?', w: 1 },
-        { id: 'CX_2', q: 'Is the store temperature comfortable?', w: 1 },
-        { id: 'CX_3', q: 'Are the washrooms clean & well maintained?', w: 1 },
-        { id: 'CX_4', q: 'Is Wi-Fi available and working?', w: 1 },
-        { id: 'CX_5', q: 'Are marketing elements & displays appropriate as per VM guide?', w: 2 },
-        { id: 'CX_6', q: 'Is furniture clean & well-kept?', w: 1 },
-        { id: 'CX_7', q: 'Ask: What do you understand by MA, CPI, QA, App Feedback Scores?', w: 1 },
-        { id: 'CX_8', q: 'Ask: What was the latest Mystery Audit score for the store?', w: 1 },
-        { id: 'CX_9', q: 'Ask: Top two opportunity areas in CX (last month)?', w: 1 }
-      ]},
-      { id: 'AP', title: 'Action Plan', items: [
-        { id: 'AP_1', q: 'Have concerns from action plan been addressed or in progress?', w: 2 },
-        { id: 'AP_2', q: 'Are all managers aware of action plan and actions?', w: 3 }
-      ]}
-    ]};
+    const CHECKLIST = {
+      sections: [
+        { id: 'Training Materials', title: 'Training Materials', items: [
+          { id: 'TM_1', q: 'FRM available at store?', w: 1 },
+          { id: 'TM_2', q: 'BRM available at store?', w: 1 },
+          { id: 'TM_3', q: 'One-pager – Hot/Cue Cards displayed?', w: 1 },
+          { id: 'TM_4', q: 'One-pager – Cold/Cue Cards displayed?', w: 1 },
+          { id: 'TM_5', q: 'Dial-in One-pager visible?', w: 2 },
+          { id: 'TM_6', q: 'New-launch learning material posted?', w: 1 },
+          { id: 'TM_7', q: 'COFFEE and HD Playbook in store?', w: 1 },
+          { id: 'TM_8', q: 'Shelf-life chart, MSDS, chemical dilution chart available?', w: 1 },
+          { id: 'TM_9', q: 'Career progression chart & Reward poster displayed?', w: 1 }
+        ]},
+        { id: 'LMS', title: 'LMS Usage', items: [
+          { id: 'LMS_1', q: 'Orientation & Induction completed within 3 days?', w: 4 },
+          { id: 'LMS_2', q: 'Are all assessments & knowledge checks completed using LMS?', w: 4 },
+          { id: 'LMS_3', q: 'Is the team using LMS for new info & communication?', w: 2 }
+        ]},
+        { id: 'Buddy', title: 'Buddy Trainer Capabilities', items: [
+          { id: 'Buddy_1', q: 'Are at least 20% of staff certified Buddy Trainers?', w: 2 },
+          { id: 'Buddy_2', q: 'Buddy Trainers passed skill checks?', w: 2 },
+          { id: 'Buddy_3', q: 'Trainees rostered with Buddies same shift?', w: 1 },
+          { id: 'Buddy_4', q: 'Buddies attended BT workshop?', w: 2 },
+          { id: 'Buddy_5', q: 'Buddies explain 4-step training effectively?', w: 2 },
+          { id: 'Buddy_6', q: 'Buddies navigate ZingLMS flawlessly?', w: 1 },
+          { id: 'Buddy_7', q: 'Monthly feedback sessions?', w: 1 }
+        ]},
+        { id: 'NewJoiner', title: 'New Joiner Training', items: [
+          { id: 'NJ_1', q: 'OJT book available for all partners?', w: 1 },
+          { id: 'NJ_2', q: 'Trainees complete skill checks with Store Manager?', w: 2 },
+          { id: 'NJ_3', q: 'Training aligned with calendar/plan?', w: 3 },
+          { id: 'NJ_4', q: 'Team aware of post-barista progression?', w: 1 },
+          { id: 'NJ_5', q: 'Members completed SHLP training?', w: 1 },
+          { id: 'NJ_6', q: 'At least 2 FOSTAC certified managers present?', w: 1 },
+          { id: 'NJ_7', q: 'ASM/SM training completed per calendar?', w: 1 }
+        ]},
+        { id: 'Partner', title: 'Partner Knowledge', items: [
+          { id: 'PK_1', q: 'Team updated with latest communication?', w: 2 },
+          { id: 'PK_2', q: 'Conduct tasting & sampling session?', w: 2 },
+          { id: 'PK_3', q: 'Sampling per guidelines?', w: 2 },
+          { id: 'PK_4', q: 'Tasting engaging & effective?', w: 2 },
+          { id: 'PK_5', q: 'Team aware of manual brew standards?', w: 2 },
+          { id: 'PK_6', q: 'Team groomed per standards?', w: 2 },
+          { id: 'PK_7', q: 'Quiz on key topics passed?', w: 3 }
+        ]},
+        { id: 'TSA', title: 'Skill Assessment', items: [
+          { id: 'TSA_1', q: 'Hot & Cold stations working?', w: 1 },
+          { id: 'TSA_2', q: 'Food station cleanliness?', w: 1 },
+          { id: 'TSA_3', q: 'Customer Service quality?', w: 1 }
+        ]},
+        { id: 'CX', title: 'Customer Experience', items: [
+          { id: 'CX_1', q: 'Music at right volume?', w: 1 },
+          { id: 'CX_2', q: 'Temperature comfortable?', w: 1 },
+          { id: 'CX_3', q: 'Washrooms clean?', w: 1 },
+          { id: 'CX_4', q: 'Wi-Fi working?', w: 1 },
+          { id: 'CX_5', q: 'Displays per VM guide?', w: 2 },
+          { id: 'CX_6', q: 'Furniture well-kept?', w: 1 },
+          { id: 'CX_7', q: 'Knowledge of MA, CPI, QA, App Feedback?', w: 1 },
+          { id: 'CX_8', q: 'Latest Mystery Audit score?', w: 1 },
+          { id: 'CX_9', q: 'Top 2 CX opps last month?', w: 1 }
+        ]},
+        { id: 'AP', title: 'Action Plan', items: [
+          { id: 'AP_1', q: 'Concerns addressed or in progress?', w: 2 },
+          { id: 'AP_2', q: 'Managers aware of action plan?', w: 3 }
+        ]}
+      ]
+    };
 
     function App() {
       const [storeName, setStoreName] = useState(localStorage.getItem('storeName') || '');
@@ -93,36 +95,65 @@
 
       const updateResp = (id, score, na) => setResponses(prev => ({ ...prev, [id]: { score, na } }));
       const pick = (sid, e) => Array.from(e.target.files).forEach(f => { const r = new FileReader(); r.onload = () => setImgs(prev => ({ ...prev, [sid]: [...(prev[sid] || []), r.result] })); r.readAsDataURL(f); });
-      const handleSubmit = e => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); alert('Report downloaded'); localStorage.clear(); };
-      const params = new URLSearchParams(window.location.search);
-      const auditorName = params.get('name') || '';
-      const auditorId = params.get('id') || '';
+
+      const handleSubmit = async e => {
+        e.preventDefault();
+        if (navigator.vibrate) navigator.vibrate(50);
+        let totalScore = 0, maxScore = 0;
+        CHECKLIST.sections.forEach(sec => sec.items.forEach(it => {
+          const r = responses[it.id] || { score: 0, na: false };
+          if (!r.na) { totalScore += r.score; maxScore += it.w; }
+        }));
+        const percentage = maxScore ? Math.round((totalScore / maxScore) * 100) : 0;
+        const params = new URLSearchParams(window.location.search);
+        const auditorName = params.get('name') || '';
+        const auditorId = params.get('id') || '';
+        try {
+          await fetch('https://script.google.com/macros/s/AKfycby_IJdm8W5aKaL-lcm5Gd_aFWwyHPQ7Sz9IE8VDFLH2OWaX8pj9i2N_nnRVwjqqlTSB/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auditorName, auditorId, storeName, storeId, totalScore, percentage })
+          });
+        } catch (err) { console.error(err); }
+        alert('Report downloaded');
+        localStorage.clear();
+      };
 
       return React.createElement('form', { onSubmit: handleSubmit, className: 'space-y-6' },
         React.createElement('h1', { className: 'text-3xl font-bold text-center mb-6' }, 'Training Audit Checklist'),
         React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
-          React.createElement('input', { type: 'text', value: auditorName, readOnly: true, placeholder: 'Auditor Name', className: 'p-2 border rounded bg-gray-200' }),
-          React.createElement('input', { type: 'text', value: auditorId, readOnly: true, placeholder: 'Auditor ID', className: 'p-2 border rounded bg-gray-200' }),
+          React.createElement('input', { type: 'text', value: new URLSearchParams(window.location.search).get('name') || '', readOnly: true, placeholder: 'Auditor Name', className: 'p-2 border rounded bg-gray-200' }),
+          React.createElement('input', { type: 'text', value: new URLSearchParams(window.location.search).get('id') || '', readOnly: true, placeholder: 'Auditor ID', className: 'p-2 border rounded bg-gray-200' }),
           React.createElement('input', { type: 'text', placeholder: 'Store Name', required: true, value: storeName, onChange: e => setStoreName(e.target.value), className: 'p-2 border rounded' }),
           React.createElement('input', { type: 'text', placeholder: 'Store ID', required: true, value: storeId, onChange: e => setStoreId(e.target.value), className: 'p-2 border rounded' })
         ),
         CHECKLIST.sections.map(section => React.createElement('div', { key: section.id, className: 'p-4 bg-white rounded shadow' },
           React.createElement('h2', { className: 'font-bold text-center mb-4' }, section.title),
           React.createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', multiple: true, onChange: e => pick(section.id, e), className: 'mb-4' }),
-          React.createElement('div', null, (imgs[section.id] || []).map((src, idx) => React.createElement('img', { key: idx, src, className: 'max-w-xs mb-2 rounded' }))),
-          section.items.map(item => {
-            const resp = responses[item.id] || { score: null, na: false };
-            return React.createElement('div', { key: item.id, className: 'flex items-center space-x-4 mb-2' },
-              React.createElement('span', { className: 'flex-1' }, item.q),
-              React.createElement('label', { className: 'inline-flex items-center space-x-1' }, React.createElement('input', { type: 'radio', name: item.id, required: true, checked: !resp.na && resp.score === item.w, onChange: () => updateResp(item.id, item.w, false) }), React.createElement('span', null, 'Yes')),
-              React.createElement('label', { className: 'inline-flex items-center space-x-1' }, React.createElement('input', { type: 'radio', name: item.id, checked: !resp.na && resp.score === 0, onChange: () => updateResp(item.id, 0, false) }), React.createElement('span', null, 'No')),
-              React.createElement('label', { className: 'inline-flex items-center space-x-1' }, React.createElement('input', { type: 'checkbox', checked: resp.na, onChange: e => updateResp(item.id, 0, e.target.checked) }), React.createElement('span', null, 'NA'))
-            );
-          })
+          React.createElement('table', { className: 'w-full table-auto mb-6 border-collapse border border-gray-300' },
+            React.createElement('thead', null, React.createElement('tr', null,
+              React.createElement('th', { className: 'border p-2' }, 'Question'),
+              React.createElement('th', { className: 'border p-2' }, 'Yes'),
+              React.createElement('th', { className: 'border p-2' }, 'No'),
+              React.createElement('th', { className: 'border p-2' }, 'NA')
+            )),
+            React.createElement('tbody', null,
+              section.items.map(item => {
+                const resp = responses[item.id] || { score: null, na: false };
+                return React.createElement('tr', { key: item.id },
+                  React.createElement('td', { className: 'border p-2' }, item.q),
+                  React.createElement('td', { className: 'border p-2 text-center' }, React.createElement('input', { type: 'radio', name: item.id, required: true, checked: !resp.na && resp.score === item.w, onChange: () => updateResp(item.id, item.w, false) })),
+                  React.createElement('td', { className: 'border p-2 text-center' }, React.createElement('input', { type: 'radio', name: item.id, checked: !resp.na && resp.score === 0, onChange: () => updateResp(item.id, 0, false) })),
+                  React.createElement('td', { className: 'border p-2 text-center' }, React.createElement('input', { type: 'radio', name: item.id, checked: resp.na, onChange: () => updateResp(item.id, 0, true) }))
+                );
+              })
+            )
+          )
         )),
-        React.createElement('button', { type: 'submit', className: 'submit-btn w-full bg-green-500 hover:bg-green-600 text-white' }, 'Submit & Download PDF')
+        React.createElement('button', { type: 'submit', className: 'submit-btn w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded' }, 'Submit & Download PDF')
       );
     }
+
     ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
 </body>
