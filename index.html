@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Third Wave Coffee | Training Audit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Training Audit Checklist</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -13,8 +13,6 @@
     body { background: #f3f4f6; font-family: sans-serif; margin: 0; }
     .container { max-width: 800px; margin: 2rem auto; background: #fff; padding: 1rem; border-radius: .5rem; }
     .title { text-align: center; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
-    .grid { display: grid; gap: 1rem; }
-    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
     table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
     th, td { border: 1px solid #e5e7eb; padding: .5rem; }
     th { background-color: #e5e7eb; }
@@ -27,232 +25,169 @@
   <div class="container" id="root"></div>
   <script>
     const { useState, useEffect } = React;
-    const params = new URLSearchParams(location.search);
-    const auditor = { name: params.get('name')||'', id: params.get('id')||'' };
-    const KEY = `audit_${auditor.id}`;
-    const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby_IJdm8W5aKaL-lcm5Gd_aFWwyHPQ7Sz9IE8VDFLH2OWaX8pj9i2N_nnRVwjqqlTSB/exec';
-    const CHECKLIST = {
-      name: 'Training Audit Checklist',
-      version: '1.0',
-      sections: [
-        { id:'Training Materials', title:'Training Materials', items:[
-          {id:'TM_1',question:'FRM available at store?',weight:1},
-          {id:'TM_2',question:'BRM available at store?',weight:1},
-          {id:'TM_3',question:'One-pager – Hot/Cue Cards displayed?',weight:1},
-          {id:'TM_4',question:'One-pager – Cold/Cue Cards displayed?',weight:1},
-          {id:'TM_5',question:'Dial-in One-pager visible?',weight:2},
-          {id:'TM_6',question:'New-launch learning material posted?',weight:1},
-          {id:'TM_7',question:'COFFEE Playbook in store?',weight:1},
-          {id:'TM_8',question:'Shelf-life chart displayed?',weight:1},
-          {id:'TM_9',question:'Career progression chart displayed?',weight:1}
-        ]},
-        { id:'LMS', title:'LMS Usage', items:[
-          {id:'LMS_1',question:'Orientation & Induction completed within 3 days?',weight:4},
-          {id:'LMS_2',question:'All assessments & knowledge checks on LMS?',weight:4},
-          {id:'LMS_3',question:'Team uses LMS for new info & comms?',weight:2}
-        ]},
-        { id:'Buddy', title:'Buddy Trainer Capabilities', items:[
-          {id:'Buddy_1',question:'≥2 certified Buddy Trainers in café?',weight:2},
-          {id:'Buddy_2',question:'Buddy Trainers passed skill checks?',weight:2},
-          {id:'Buddy_3',question:'Trainees rostered with Buddies?',weight:2},
-          {id:'Buddy_4',question:'Logbook up-to-date?',weight:1},
-          {id:'Buddy_5',question:'Badge worn during training?',weight:1},
-          {id:'Buddy_6',question:'Schedules visible?',weight:1},
-          {id:'Buddy_7',question:'Monthly feedback sessions?',weight:1}
-        ]},
-        { id:'NewJoiner', title:'New Joiner Training', items:[
-          {id:'NJ_1',question:'Tracker updated?',weight:2},
-          {id:'NJ_2',question:'15-day cert completed?',weight:2},
-          {id:'NJ_3',question:'Skill gaps documented?',weight:1},
-          {id:'NJ_4',question:'Training wall current?',weight:1},
-          {id:'NJ_5',question:'Learning plan filed?',weight:1},
-          {id:'NJ_6',question:'Cert cards issued?',weight:1},
-          {id:'NJ_7',question:'Refresher logged?',weight:1}
-        ]},
-        { id:'Partner', title:'Partner Knowledge', items:[
-          {id:'PK_1',question:'Team knows company comms?',weight:1},
-          {id:'PK_2',question:'Tasting & sampling done?',weight:1},
-          {id:'PK_3',question:'Sampling follows guidelines?',weight:1},
-          {id:'PK_4',question:'Tasting engaging?',weight:1},
-          {id:'PK_5',question:'Team knows manual brew?',weight:1},
-          {id:'PK_6',question:'Grooming standards met?',weight:1},
-          {id:'PK_7',question:'Pop-quiz passed?',weight:1}
-        ]},
-        { id:'TSA', title:'Skill Assessment', items:[
-          {id:'TSA_1',question:'Hot & Cold stations working?',weight:1},
-          {id:'TSA_2',question:'Food station cleanliness?',weight:1},
-          {id:'TSA_3',question:'Customer Service quality?',weight:1}
-        ]},
-        { id:'CX', title:'Customer Experience', items:[
-          {id:'CX_1',question:'Music at right volume?',weight:1},
-          {id:'CX_2',question:'Temperature comfortable?',weight:1},
-          {id:'CX_3',question:'Washrooms clean?',weight:1},
-          {id:'CX_4',question:'Wi-Fi working?',weight:1},
-          {id:'CX_5',question:'VM elements correct?',weight:1},
-          {id:'CX_6',question:'Furniture well-kept?',weight:1},
-          {id:'CX_7',question:'Staff know key metrics?',weight:1},
-          {id:'CX_8',question:'Mystery Audit score known?',weight:1},
-          {id:'CX_9',question:'Top 2 CX opps named?',weight:1}
-        ]},
-        { id:'AP', title:'Action Plan', items:[
-          {id:'AP_1',question:'Concerns addressed?',weight:2},
-          {id:'AP_2',question:'Managers aware?',weight:3}
-        ]}
-      ]
-    };
-    function freshResponses(){
-      const obj = {};
-      CHECKLIST.sections.forEach(sec =>
-        sec.items.forEach(it => obj[it.id] = { score: null, na: false })
-      );
-      return obj;
+    const CHECKLIST = { sections: [
+      { id: 'Training Materials', title: 'Training Materials', items: [
+        { id: 'TM_1', q: 'FRM available at store?', w: 1 },
+        { id: 'TM_2', q: 'BRM available at store?', w: 1 },
+        { id: 'TM_3', q: 'One-pager – Hot/Cue Cards displayed?', w: 1 },
+        { id: 'TM_4', q: 'One-pager – Cold/Cue Cards displayed?', w: 1 },
+        { id: 'TM_5', q: 'Dial-in One-pager visible?', w: 2 },
+        { id: 'TM_6', q: 'New-launch learning material posted?', w: 1 },
+        { id: 'TM_7', q: 'COFFEE Playbook in store?', w: 1 },
+        { id: 'TM_8', q: 'Shelf-life chart displayed?', w: 1 },
+        { id: 'TM_9', q: 'Career progression chart displayed?', w: 1 }
+      ]},
+      { id: 'LMS', title: 'LMS Usage', items: [
+        { id: 'LMS_1', q: 'Orientation & Induction completed within 3 days?', w: 4 },
+        { id: 'LMS_2', q: 'All assessments & knowledge checks on LMS?', w: 4 },
+        { id: 'LMS_3', q: 'Team uses LMS for new info & comms?', w: 2 }
+      ]},
+      { id: 'Buddy', title: 'Buddy Trainer Capabilities', items: [
+        { id: 'Buddy_1', q: '≥2 certified Buddy Trainers in café?', w: 2 },
+        { id: 'Buddy_2', q: 'Buddy Trainers passed skill checks?', w: 2 },
+        { id: 'Buddy_3', q: 'Trainees rostered with Buddies?', w: 2 },
+        { id: 'Buddy_4', q: 'Logbook up-to-date?', w: 1 },
+        { id: 'Buddy_5', q: 'Badge worn during training?', w: 1 },
+        { id: 'Buddy_6', q: 'Schedules visible?', w: 1 },
+        { id: 'Buddy_7', q: 'Monthly feedback sessions?', w: 1 }
+      ]},
+      { id: 'NewJoiner', title: 'New Joiner Training', items: [
+        { id: 'NJ_1', q: 'Tracker updated?', w: 2 },
+        { id: 'NJ_2', q: '15-day cert completed?', w: 2 },
+        { id: 'NJ_3', q: 'Skill gaps documented?', w: 1 },
+        { id: 'NJ_4', q: 'Training wall current?', w: 1 },
+        { id: 'NJ_5', q: 'Learning plan filed?', w: 1 },
+        { id: 'NJ_6', q: 'Cert cards issued?', w: 1 },
+        { id: 'NJ_7', q: 'Refresher logged?', w: 1 }
+      ]},
+      { id: 'Partner', title: 'Partner Knowledge', items: [
+        { id: 'PK_1', q: 'Team knows company comms?', w: 1 },
+        { id: 'PK_2', q: 'Tasting & sampling done?', w: 1 },
+        { id: 'PK_3', q: 'Sampling follows guidelines?', w: 1 },
+        { id: 'PK_4', q: 'Tasting engaging?', w: 1 },
+        { id: 'PK_5', q: 'Team knows manual brew?', w: 1 },
+        { id: 'PK_6', q: 'Grooming standards met?', w: 1 },
+        { id: 'PK_7', q: 'Pop-quiz passed?', w: 1 }
+      ]},
+      { id: 'TSA', title: 'Skill Assessment', items: [
+        { id: 'TSA_1', q: 'Hot & Cold stations working?', w: 1 },
+        { id: 'TSA_2', q: 'Food station cleanliness?', w: 1 },
+        { id: 'TSA_3', q: 'Customer Service quality?', w: 1 }
+      ]},
+      { id: 'CX', title: 'Customer Experience', items: [
+        { id: 'CX_1', q: 'Music at right volume?', w: 1 },
+        { id: 'CX_2', q: 'Temperature comfortable?', w: 1 },
+        { id: 'CX_3', q: 'Washrooms clean?', w: 1 },
+        { id: 'CX_4', q: 'Wi-Fi working?', w: 1 },
+        { id: 'CX_5', q: 'VM elements correct?', w: 1 },
+        { id: 'CX_6', q: 'Furniture well-kept?', w: 1 },
+        { id: 'CX_7', q: 'Staff know key metrics?', w: 1 },
+        { id: 'CX_8', q: 'Mystery Audit score known?', w: 1 },
+        { id: 'CX_9', q: 'Top 2 CX opps named?', w: 1 }
+      ]},
+      { id: 'AP', title: 'Action Plan', items: [
+        { id: 'AP_1', q: 'Concerns addressed?', w: 2 },
+        { id: 'AP_2', q: 'Managers aware?', w: 3 }
+      ]}
+    ]};
+
+    function freshResp() {
+      const o = {};
+      CHECKLIST.sections.forEach(s => s.items.forEach(i => o[i.id] = { score: null, na: false }));
+      return o;
     }
-    function App(){
+
+    function App() {
+      console.log('Checklist Questions:', CHECKLIST.sections.map(s => ({ section: s.title, questions: s.items.map(i => i.q) })));
+      const params = new URLSearchParams(window.location.search);
+      const auditor = { name: params.get('name')||'', id: params.get('id')||'' };
+      const KEY = `audit_${auditor.id}`;
       const [resp, setResp] = useState(() => {
-        try { return JSON.parse(localStorage.getItem(KEY)) || freshResponses(); }
-        catch { return freshResponses(); }
+        try { return JSON.parse(localStorage.getItem(KEY))||freshResp(); } catch { return freshResp(); }
       });
       const [storeName, setStoreName] = useState('');
       const [storeId, setStoreId] = useState('');
-      const [sectionImages, setSectionImages] = useState({});
-      useEffect(() => { localStorage.setItem(KEY, JSON.stringify(resp)); }, [resp]);
+      const [imgs, setImgs] = useState({});
 
-      const upd = (id, patch) => setResp(r => ({ ...r, [id]: { ...r[id], ...patch } }));
-      const handleImage = (secId, e) => {
-        Array.from(e.target.files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            setSectionImages(prev => {
-              const arr = prev[secId] || [];
-              return { ...prev, [secId]: [...arr, reader.result] };
-            });
-          };
-          reader.readAsDataURL(file);
-        });
-      };
+      useEffect(() => localStorage.setItem(KEY, JSON.stringify(resp)), [resp]);
+      const upd = (id, p) => setResp(r => ({ ...r, [id]: { ...r[id], ...p } }));
+      const pick = (sid, e) => Array.from(e.target.files).forEach(f => {
+        const r = new FileReader();
+        r.onload = () => setImgs(i => ({ ...i, [sid]: [...(i[sid]||[]), r.result] }));
+        r.readAsDataURL(f);
+      });
 
-      const handleSubmit = e => {
+      const submit = e => {
         e.preventDefault();
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFillColor(79,70,229);
-        doc.rect(0,0,doc.internal.pageSize.getWidth(),25,'F');
-        doc.setTextColor(255,255,255);
-        doc.setFontSize(18);
-        doc.text(`Training audit report | ${storeName}`, doc.internal.pageSize.getWidth()/2,15,{align:'center'});
-
-        const details = [
-          ['Store Name', storeName],
-          ['Store ID', storeId],
-          ['Auditor Name', auditor.name],
-          ['Auditor ID', auditor.id]
-        ];
-        let totalScore=0, maxScore=0;
-
-        CHECKLIST.sections.forEach(sec => {
-          doc.setTextColor(0);
-          doc.setFontSize(14);
-          let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : 40;
-          doc.text(sec.title, 10, y);
-          y += 5;
-          (sectionImages[sec.id] || []).forEach(img => {
-            doc.addImage(img, 'JPEG', 10, y, 50, 30);
-            y += 35;
-            if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 20; }
+        let t=0, m=0;
+        CHECKLIST.sections.forEach(s => s.items.forEach(i => {
+          const v=resp[i.id]||{};
+          if(!v.na&&v.score!=null){t+=v.score; m+=i.w;}
+        }));
+        const score = `${t}/${m} (${m?Math.round(100*t/m):0}%)`;
+        doc.text(`Score: ${score}`, 14, 14);
+        doc.text(`Report | ${storeName}`, 14, 22);
+        let y = 30;
+        CHECKLIST.sections.forEach(s => {
+          doc.setFontSize(12);
+          doc.text(s.title, 14, y);
+          y += 6;
+          (imgs[s.id]||[]).forEach(img => {
+            doc.addImage(img,'JPEG',14,y,50,30);
+            y += 32;
           });
-
-          const rows = sec.items.map(it => {
-            const r = resp[it.id];
-            const ans = r.na ? 'NA' : (r.score===it.weight?'Yes':'No');
-            if (!r.na && r.score!=null) { totalScore += r.score; maxScore += it.weight; }
-            return [it.question, ans];
+          const rows = s.items.map(i => {
+            const v=resp[i.id]||{};
+            return [i.q, v.na?'NA':(v.score===i.w?'Yes':'No')];
           });
-
-          doc.autoTable({
-            startY: y,
-            head: [['Question','Response']],
-            body: rows,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [79,70,229], textColor: 255 },
-            didParseCell: data => {
-              if (data.section==='body' && data.column.index===1) {
-                const t = data.cell.text[0];
-                if (t==='Yes') data.cell.styles.textColor=[0,128,0];
-                if (t==='No') data.cell.styles.textColor=[255,0,0];
-                if (t==='NA') data.cell.styles.textColor=[255,165,0];
-              }
-            }
-          });
+          doc.autoTable({ startY: y, head:[['Question','Resp']], body: rows, styles:{fontSize:8} });
+          y = doc.lastAutoTable.finalY + 10;
         });
-
-        const percentage = maxScore ? Math.round(100*totalScore/maxScore) : 0;
-        details.push(['Score',`${totalScore}/${maxScore}`],['Percentage',`${percentage}%`]);
-        doc.addPage();
-        doc.autoTable({ startY:20, head:[['Field','Value']], body:details, styles:{fontSize:10}, headStyles:{fillColor:[230,230,230]} });
-
-        fetch(LOG_ENDPOINT,{ method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({storeName,storeId,auditorName:auditor.name,auditorId:auditor.id,score:totalScore,percentage}) });
-        doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
-        localStorage.removeItem(KEY);
-        window.alert('Report downloaded');
+        doc.save(`audit_${auditor.id}_${Date.now()}.pdf`);
       };
 
-      return React.createElement('div',{className:'container'},
-        React.createElement('h1',{className:'title'},CHECKLIST.name),
-        React.createElement('form',{onSubmit:handleSubmit},
-          React.createElement('div',{className:'grid grid-cols-2 mb-4'},
+      return React.createElement('form',{onSubmit:submit},
+        React.createElement('div',{className:'container'},
+          React.createElement('h1',{className:'title'},'Third Wave Coffee | Training Audit'),
+          React.createElement('div',{className:'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'},
             React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),
+              React.createElement('label',{className:'block mb-1 font-medium'},'Auditor Name'),
               React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})
             ),
             React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),
+              React.createElement('label',{className:'block mb-1 font-medium'},'Auditor ID'),
               React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'})
-            )
-          ),
-          React.createElement('div',{className:'grid grid-cols-2 mb-6'},
+            ),
             React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),
+              React.createElement('label',{className:'block mb-1 font-medium'},'Store Name'),
               React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})
             ),
             React.createElement('div',null,
-              React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),
+              React.createElement('label',{className:'block mb-1 font-medium'},'Store ID'),
               React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'})
             )
           ),
-          CHECKLIST.sections.map(sec =>
-            React.createElement('div',{key:sec.id,className:'section'},
-              React.createElement('h2',null,sec.title),
-              React.createElement('input',{type:'file',accept:'image/*',capture:'environment',multiple:true,onChange:e=>handleImage(sec.id,e)}),
-              React.createElement('div',null,(sectionImages[sec.id]||[]).map((src,i)=>React.createElement('img',{key:i,src:src,className:'photo-preview'}))),
-              React.createElement('table',null,
-                React.createElement('thead',null,React.createElement('tr',null,
-                  React.createElement('th',null,'Question'),
-                  React.createElement('th',null,'Yes'),
-                  React.createElement('th',null,'No'),
-                  React.createElement('th',null,'NA')
-                )),
-                React.createElement('tbody',null,
-                  sec.items.map(it=>{
-                    const r = resp[it.id];
-                    return React.createElement('tr',{key:it.id},
-                      React.createElement('td',null,it.question),
-                      React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),
-                      React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),
-                      React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})}))
-                    );
-                  })
-                )
-              )
+          CHECKLIST.sections.map(s => React.createElement('div',{key:s.id,className:'section mb-6'},
+            React.createElement('h2',null,s.title),
+            React.createElement('input',{type:'file',accept:'image/*',capture:'environment',multiple:true,onChange:e=>pick(s.id,e)}),
+            React.createElement('div',null,(imgs[s.id]||[]).map((src,i)=>React.createElement('img',{key:i,src, className:'photo-preview'}))),
+            React.createElement('table',null,
+              React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),
+              React.createElement('tbody',null,s.items.map(i=>React.createElement('tr',{key:i.id},
+                React.createElement('td',null,i.q),
+                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:i.id,value:'yes',required:true,checked:resp[i.id]?.score===i.w,onChange:() => upd(i.id,{score:i.w,na:false})})),
+                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:i.id,value:'no',checked:resp[i.id]?.score===0&&!resp[i.id]?.na,onChange:() => upd(i.id,{score:0,na:false})})),
+                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:i.id,value:'na',checked:resp[i.id]?.na,onChange:() => upd(i.id,{na:true,score:null})}))
+              )))
             )
-          ),
+          )),
           React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
         )
       );
     }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(
-      React.createElement(App)
-    );
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
 </body>
 </html>
