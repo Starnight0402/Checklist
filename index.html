@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Third Wave Coffee | Training Audit</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -12,13 +12,12 @@
   <style>
     body { background: linear-gradient(135deg,#f9f2ec,#eef9f2); font-family:sans-serif; margin:0; }
     .container { max-width:800px; margin:2rem auto; background:#fff; padding:1.5rem; border-radius:.75rem; }
-    .logo { display:block; margin:0 auto 1rem; max-width:200px; }
     .title { text-align:center; font-size:2rem; font-weight:700; margin:.5rem 0; }
     .info-box { border:1px solid #e5e7eb; padding:1rem; border-radius:.75rem; margin-bottom:2rem; }
     .section { margin-bottom:2rem; border:1px solid #e5e7eb; border-radius:.75rem; padding:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
     .section h2 { text-align:center; font-weight:700; margin-bottom:1rem; }
     table { border-collapse:collapse; width:100%; margin-bottom:1rem; }
-    th,td { border:1px solid #e5e7eb; padding:.5rem; }
+    th, td { border:1px solid #e5e7eb; padding:.5rem; }
     th { background:#f3f4f6; }
     input[type=radio] { margin-right:.25rem; }
     .photo-preview { max-width:100px; margin:.5rem; border-radius:.25rem; }
@@ -27,18 +26,12 @@
 </head>
 <body>
   <div class="container" id="root"></div>
-
   <script>
-  const { useState, useEffect } = React;
-  const params = new URLSearchParams(location.search);
-  const auditor = { name: params.get('name')||'', id: params.get('id')||'' };
-  const KEY = `audit_${auditor.id}`;
-  const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby_IJdm8W5aKaL-lcm5Gd_aFWwyHPQ7Sz9IE8VDFLH2OWaX8pj9i2N_nnRVwjqqlTSB/exec';
-
-  const CHECKLIST = {
-    name: 'Training Audit Checklist',
-    version: '1.0',
-    sections: [
+    const { useState, useEffect } = React;
+    const params = new URLSearchParams(window.location.search);
+    const auditor = { name: params.get('name') || 'Auditor', id: params.get('id') || '000' };
+    const KEY = `audit_${auditor.id}`;
+    const CHECKLIST = { name:'Training Audit Checklist', version:'1.0', sections:[
       { id:'Training Materials', title:'Training Materials', items:[
         {id:'TM_1',question:'FRM available at store?',weight:1},
         {id:'TM_2',question:'BRM available at store?',weight:1},
@@ -102,170 +95,89 @@
         {id:'AP_1',question:'Concerns addressed?',weight:2},
         {id:'AP_2',question:'Managers aware?',weight:3}
       ]}
-    ]
-  };
+    ]};
 
-  function freshResponses() {
-    const obj = {};
-    CHECKLIST.sections.forEach(sec =>
-      sec.items.forEach(it => obj[it.id] = { score:null, na:false })
-    );
-    return obj;
-  }
-
-  function App() {
-    const [resp,setResp] = useState(() => {
-      try { return JSON.parse(localStorage.getItem(KEY))||freshResponses(); }
-      catch { return freshResponses(); }
-    });
-    const [storeName,setStoreName]=useState('');
-    const [storeId,setStoreId]=useState('');
-    const [sectionImages,setSectionImages]=useState({});
-    useEffect(()=>{ localStorage.setItem(KEY, JSON.stringify(resp)); },[resp]);
-
-    const upd = (id,patch) => setResp(r => ({ ...r, [id]:{...r[id],...patch} }));
-    const handleImage = (secId,e)=>{
-      Array.from(e.target.files).forEach(file=>{
-        const reader=new FileReader();
-        reader.onload=evt=>{
-          const imgEl=new Image();
-          imgEl.onload=()=>{
-            const canvas=document.createElement('canvas');
-            const MAX_W=800;
-            let [w,h]=[imgEl.width,imgEl.height];
-            if(w>MAX_W){ h=h*MAX_W/w; w=MAX_W; }
-            canvas.width=w; canvas.height=h;
-            canvas.getContext('2d').drawImage(imgEl,0,0,w,h);
-            const type=file.type.includes('png')?'image/png':'image/jpeg';
-            const dataUrl=canvas.toDataURL(type,0.8);
-            setSectionImages(prev=>{
-              const arr=prev[secId]||[];
-              return {...prev,[secId]:[...arr,dataUrl]};
-            });
-          };
-          imgEl.src=evt.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    };
-
-    const handleSubmit=e=>{
-      e.preventDefault();
-      const {jsPDF}=window.jspdf;
-      const doc=new jsPDF();
-      const score=computeScore();
-      doc.setFillColor(79,70,229);
-      doc.rect(10,10,190,30,'F');
-      doc.setTextColor(255,255,255);
-      doc.setFontSize(24);
-      doc.text(`Score: ${score}`,105,28,{align:'center'});
-      doc.setFontSize(18);
-      doc.setTextColor(0);
-      doc.text(`Training audit report | ${storeName}`,105,45,{align:'center'});
-      let y=60;
-      CHECKLIST.sections.forEach(sec=>{
-        y+=15; doc.setFontSize(16); doc.text(sec.title,105,y,{align:'center'}); y+=10;
-        const rows=sec.items.map(it=>{
-          const r=resp[it.id];
-          const a=r.na?'NA':(r.score===it.weight?'Yes':'No');
-          return [it.question,a];
-        });
-        doc.autoTable({
-          startY:y, head:[['Question','Response']], body:rows,
-          styles:{fontSize:8}, headStyles:{fillColor:[79,70,229],textColor:255},
-          didParseCell:data=>{
-            if(data.section==='body'&&data.column.index===1){
-              const t=data.cell.text[0];
-              if(t==='Yes') data.cell.styles.textColor=[0,128,0];
-              if(t==='No') data.cell.styles.textColor=[255,0,0];
-              if(t==='NA') data.cell.styles.textColor=[255,165,0];
-            }
-          }
-        });
-        y=doc.autoTable.previous.finalY+5;
-        (sectionImages[sec.id]||[]).forEach(img=>{
-          const fmt=img.startsWith('data:image/png')?'PNG':'JPEG';
-          doc.addImage(img,fmt,15,y,50,30); y+=35;
-        });
-      });
-      doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
-
-      const payload = {
-        auditor,
-        store: { name: storeName, id: storeId },
-        scores: resp,
-        overallScore: score,
-        images: sectionImages,
-        timestamp: Date.now()
-      };
-
-      fetch(LOG_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      }).then(r => {
-        if (r.ok) {
-          alert('Submission logged successfully');
-        } else {
-          r.text().then(t => alert('Failed to log submission: ' + t));
-        }
-      }).catch(err => {
-        alert('Error logging submission: ' + err.message);
-      });
-    };
-
-    function computeScore(){
-      let t=0,m=0;
-      CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{
-        const r=resp[it.id];
-        if(!r.na&&r.score!=null){ t+=r.score; m+=it.weight; }
-      }));
-      return `${t}/${m} (${m?Math.round(100*t/m):0}%)`;
+    function freshResponses() {
+      const obj = {};
+      CHECKLIST.sections.forEach(sec => sec.items.forEach(it => obj[it.id] = { score:null, na:false }));
+      return obj;
     }
 
-    return React.createElement('div',{className:'container'},
-      React.createElement('img',{src:'data:image/png;base64,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',alt:'Logo',className:'logo'}),
-      React.createElement('h1',{className:'title'},CHECKLIST.name),
-      React.createElement('div',{className:'info-box'},
-        React.createElement('div',{className:'grid grid-cols-2 mb-4'},
-          React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),
-            React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})),
-          React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),
-            React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'}))
-        ),
-        React.createElement('div',{className:'grid grid-cols-2'},
-          React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),
-            React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})),
-          React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),
-            React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'}))
-        )
-      ),
-      React.createElement('form',{onSubmit:handleSubmit},
-        CHECKLIST.sections.map(sec=>React.createElement('div',{key:sec.id,className:'section'},
-          React.createElement('h2',null,sec.title),
-          React.createElement('table',null,
-            React.createElement('thead',null,React.createElement('tr',null,
-              React.createElement('th',null,'Question'),
-              React.createElement('th',null,'Yes'),
-              React.createElement('th',null,'No'),
-              React.createElement('th',null,'NA'))),
-            React.createElement('tbody',null,sec.items.map(it=>{
-              const r=resp[it.id];
-              return React.createElement('tr',{key:it.id},
-                React.createElement('td',null,it.question),
-                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),
-                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),
-                React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})}))
-              );
-            }))
+    function App() {
+      const [resp, setResp] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(KEY)) || freshResponses(); }
+        catch { return freshResponses(); }
+      });
+      const [storeName, setStoreName] = useState('');
+      const [storeId, setStoreId] = useState('');
+      const [sectionImages, setSectionImages] = useState({});
+      useEffect(() => localStorage.setItem(KEY, JSON.stringify(resp)), [resp]);
+
+      const upd = (id, patch) => setResp(r => ({ ...r, [id]: { ...r[id], ...patch } }));
+      const handleImage = (secId, e) => {
+        Array.from(e.target.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = () => setSectionImages(prev => ({
+            ...prev,
+            [secId]: [...(prev[secId]||[]), reader.result]
+          }));
+          reader.readAsDataURL(file);
+        });
+      };
+
+      const handleSubmit = e => {
+        e.preventDefault();
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const score = computeScore();
+        doc.setFillColor(79,70,229); doc.rect(10,10,190,30,'F'); doc.setTextColor(255,255,255); doc.setFontSize(24); doc.text(`Score: ${score}`,105,28,{align:'center'});
+        doc.setFontSize(18); doc.setTextColor(0); doc.text(`Training audit report | ${storeName}`,105,45,{align:'center'});
+        let y = 60;
+        CHECKLIST.sections.forEach(sec => {
+          y += 15; doc.setFontSize(16); doc.text(sec.title,105,y,{align:'center'}); y += 10;
+          const rows = sec.items.map(it => {
+            const r = resp[it.id]; return [it.question, r.na?'NA':(r.score===it.weight?'Yes':'No')];
+          });
+          doc.autoTable({ startY:y, head:[['Question','Response']], body:rows, styles:{fontSize:8}, headStyles:{fillColor:[79,70,229],textColor:255}, didParseCell:data=>{
+            if(data.section==='body'&&data.column.index===1){ const t=data.cell.text[0]; if(t==='Yes') data.cell.styles.textColor=[0,128,0]; if(t==='No') data.cell.styles.textColor=[255,0,0]; if(t==='NA') data.cell.styles.textColor=[255,165,0]; }
+          }});
+          y = doc.autoTable.previous.finalY + 5;
+          (sectionImages[sec.id]||[]).forEach(img=>{doc.addImage(img,'JPEG',15,y,50,30); y += 35;});
+        });
+        doc.save(`TWC_Audit_${auditor.id}_${Date.now()}.pdf`);
+      };
+
+      function computeScore() {
+        let t=0,m=0; CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{ const r=resp[it.id]; if(!r.na&&r.score!=null){ t+=r.score; m+=it.weight; }})); return `${t}/${m} (${m?Math.round(100*t/m):0}%)`;
+      }
+
+      return React.createElement('div',{className:'container'},
+        React.createElement('h1',{className:'title'},CHECKLIST.name),
+        React.createElement('div',{className:'info-box'},
+          React.createElement('div',{className:'grid grid-cols-2 mb-4'},
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor Name'),React.createElement('input',{type:'text',value:auditor.name,readOnly:true,className:'w-full p-2 border rounded'})),
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Auditor ID'),React.createElement('input',{type:'text',value:auditor.id,readOnly:true,className:'w-full p-2 border rounded'}))
           ),
-          React.createElement('input',{type:'file',accept:'image/*',capture:'environment',multiple:true,onChange:e=>handleImage(sec.id,e)}),
-          React.createElement('div',null,(sectionImages[sec.id]||[]).map((src,i)=>React.createElement('img',{key:i,src:src,className:'photo-preview'})))
-        )),
-        React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
-      )
-    );
-  }}
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+          React.createElement('div',{className:'grid grid-cols-2'},
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store Name'),React.createElement('input',{type:'text',value:storeName,onChange:e=>setStoreName(e.target.value),required:true,className:'w-full p-2 border rounded'})),
+            React.createElement('div',null,React.createElement('label',{className:'block font-medium mb-1'},'Store ID'),React.createElement('input',{type:'text',value:storeId,onChange:e=>setStoreId(e.target.value),required:true,className:'w-full p-2 border rounded'}))
+          )
+        ),
+        React.createElement('form',{onSubmit:handleSubmit},
+          CHECKLIST.sections.map(sec=>React.createElement('div',{key:sec.id,className:'section'},
+            React.createElement('h2',null,sec.title),
+            React.createElement('table',null,
+              React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Question'),React.createElement('th',null,'Yes'),React.createElement('th',null,'No'),React.createElement('th',null,'NA'))),
+              React.createElement('tbody',null,sec.items.map(it=>{const r=resp[it.id];return React.createElement('tr',{key:it.id},React.createElement('td',null,it.question),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'yes',required:true,checked:r.score===it.weight,onChange:()=>upd(it.id,{score:it.weight,na:false})})),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'no',checked:r.score===0&&!r.na,onChange:()=>upd(it.id,{score:0,na:false})})),React.createElement('td',{className:'text-center'},React.createElement('input',{type:'radio',name:it.id,value:'na',checked:r.na,onChange:()=>upd(it.id,{na:true,score:null})})));}))
+            ),
+            React.createElement('input',{type:'file',accept:'image/*',capture:'environment',multiple:true,onChange:e=>handleImage(sec.id,e)}),
+            React.createElement('div',null,(sectionImages[sec.id]||[]).map((src,i)=>React.createElement('img',{key:i,src:src,className:'photo-preview'})))
+          )),
+          React.createElement('button',{type:'submit',className:'submit-btn'},'Submit & Download PDF')
+        )
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
 </body>
 </html>
