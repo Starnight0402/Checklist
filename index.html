@@ -132,7 +132,7 @@
         const auditorId = params.get('id') || '';
         try {
           const paramsLog = new URLSearchParams({ auditorName, auditorId, storeName, storeId, total, pct });
-          await fetch(`https://script.google.com/macros/s/AKfycby4oEhip48o_sQXoiZd0kOdkGTyiK9XeEfZkLdcKqY8Yaxy0qQP6B6CnycBZvUlry2N/exec?${paramsLog}`, { mode: 'no-cors' });
+          await fetch(`https://script.google.com/macros/s/AKfycbwspqA90_R3FMqP8YEw_BimIS-elyzseKphTyjmqDtBRmndcmUh1W6x1lNS9G8gqLk/exec?${paramsLog}`, { mode: 'no-cors' });
         } catch (err) {
           alert('Error logging results. PDF will not be generated.');
           console.error(err);
