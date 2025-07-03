@@ -85,14 +85,19 @@
       const [storeName, setStoreName] = useState(localStorage.getItem('storeName') || '');
       const [storeId, setStoreId] = useState(localStorage.getItem('storeId') || '');
       const [responses, setResponses] = useState(JSON.parse(localStorage.getItem('responses')) || {});
-      const [imgs, setImgs] = useState(JSON.parse(localStorage.getItem('imgs')) || {});
+      // Images can be large so keep them only in memory to avoid localStorage quota issues
+      const [imgs, setImgs] = useState({});
 
       useEffect(() => {
-        localStorage.setItem('storeName', storeName);
-        localStorage.setItem('storeId', storeId);
-        localStorage.setItem('responses', JSON.stringify(responses));
-        localStorage.setItem('imgs', JSON.stringify(imgs));
-      }, [storeName, storeId, responses, imgs]);
+        try {
+          localStorage.setItem('storeName', storeName);
+          localStorage.setItem('storeId', storeId);
+          localStorage.setItem('responses', JSON.stringify(responses));
+          // Intentionally not storing images in localStorage to prevent quota errors
+        } catch (err) {
+          console.warn('Error saving to localStorage', err);
+        }
+      }, [storeName, storeId, responses]);
 
       const updateResp = (id, score, na) => setResponses(prev => ({ ...prev, [id]: { score, na } }));
       const pickImages = (sectionId, e) => {
