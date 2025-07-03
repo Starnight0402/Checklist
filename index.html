@@ -131,8 +131,12 @@
         const auditorName = params.get('name') || '';
         const auditorId = params.get('id') || '';
         try {
-          const paramsLog = new URLSearchParams({ auditorName, auditorId, storeName, storeId, total, pct });
-          await fetch(`https://script.google.com/macros/s/AKfycbwspqA90_R3FMqP8YEw_BimIS-elyzseKphTyjmqDtBRmndcmUh1W6x1lNS9G8gqLk/exec?${paramsLog}`, { mode: 'no-cors' });
+          const resLog = await fetch('https://script.google.com/macros/s/AKfycby4oEhip48o_sQXoiZd0kOdkGTyiK9XeEfZkLdcKqY8Yaxy0qQP6B6CnycBZvUlry2N/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auditorName, auditorId, storeName, storeId, total, pct })
+          });
+          if (!resLog.ok) throw new Error(`Logging failed: ${resLog.status}`);
         } catch (err) {
           alert('Error logging results. PDF will not be generated.');
           console.error(err);
@@ -147,15 +151,36 @@
           doc.text(`Auditor: ${auditorName} (ID ${auditorId})`, 20, 40);
           doc.text(`Store: ${storeName} (ID ${storeId})`, 140, 40);
           doc.text(`Score: ${total} / ${max} (${pct}%)`, 260, 40);
-          const rows = [];
-          CHECKLIST.sections.forEach(sec => sec.items.forEach(it => {
-            const r = responses[it.id] || { score: 0, na: false };
-            rows.push([sec.title, it.q, r.na ? 'NA' : (r.score === it.w ? 'Yes' : 'No'), r.score]);
-          }));
-          doc.autoTable({ startY: 60, head: [['Section', 'Question', 'Response', 'Score']], body: rows, styles: { fontSize: 9, cellPadding: 4 }, headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], halign: 'center' } });
+          let y = 60;
+          CHECKLIST.sections.forEach(sec => {
+            doc.setFontSize(12);
+            doc.text(sec.title, 20, y);
+            y += 6;
+            (imgs[sec.id] || []).forEach(src => {
+              doc.addImage(src, 'JPEG', 20, y, 30, 30);
+              y += 34;
+              if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 20; }
+            });
+            const rows = sec.items.map(it => {
+              const r = responses[it.id] || { score: 0, na: false };
+              const ans = r.na ? 'NA' : (r.score === it.w ? 'Yes' : 'No');
+              const sc = r.na ? 'NA' : r.score;
+              return [it.q, ans, sc];
+            });
+            doc.autoTable({
+              startY: y,
+              head: [['Question', 'Response', 'Score']],
+              body: rows,
+              styles: { fontSize: 9, cellPadding: 4 },
+              headStyles: { fillColor: [200,200,200], halign: 'center' },
+              columnStyles: { 0: { cellWidth: 250 }, 1: { cellWidth: 60, halign: 'center' }, 2: { cellWidth: 40, halign: 'center' } }
+            });
+            y = doc.lastAutoTable.finalY + 10;
+            if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 20; }
+          });
           alert('Report downloaded');
           doc.save(`audit_${auditorId}_${Date.now()}.pdf`);
-        } catch (err) { console.error(err); }
+        } catch(err) { console.error(err); }
         localStorage.clear();
       };
       return (
