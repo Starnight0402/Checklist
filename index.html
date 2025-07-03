@@ -96,7 +96,8 @@
 
       const updateResp = (id, score, na) => setResponses(prev => ({ ...prev, [id]: { score, na } }));
       const pickImages = (sectionId, e) => {
-        Array.from(e.target.files).forEach(file => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
           const reader = new FileReader();
           reader.onload = () => setImgs(prev => ({
             ...prev,
@@ -104,6 +105,7 @@
           }));
           reader.readAsDataURL(file);
         });
+        e.target.value = null;
       };
 
       const handleSubmit = async e => {
