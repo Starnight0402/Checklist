@@ -104,7 +104,7 @@
 
       const updateResp = (id, score, na, vib) => {
         if (vib==='yes') navigator.vibrate(50);
-        if (vib==='no') navigator.vibrate([50,50]);
+        if (vib==='no') navigator.vibrate([30,50]);
         setResponses(prev=>({...prev,[id]:{score,na}}));
       };
 
@@ -129,7 +129,10 @@
       };
 
       const allAnswered = CHECKLIST.sections.every(sec=>sec.items.every(it=>{
-        const r=responses[it.id]||{score:null,na:false};return r.score!==null||r.na;
+        const r=responses[it.id]||{score:null,na:false};
+                    const yesSel=r.score===it.w;
+                    const noSel=(it.id==='LMS_1'||it.id==='LMS_2')? r.score<0 : (r.score===0&&!r.na);
+                    const naSel=r.na;return r.score!==null||r.na;
       }));
 
       const handleSubmit=async e=>{
@@ -183,7 +186,7 @@
                     <tr key={it.id} className="odd:bg-gray-50 hover:bg-gray-100">
                       <td className="border p-2 align-middle">{it.q}</td>
                       <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${yesSel?'bg-green-200 text-green-800':'bg-gray-200 text-gray-600 hover:bg-green-100'}`} onClick={()=>updateResp(it.id,it.w,false,'yes')}>Yes</button></td>
-                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${noSel?'bg-red-200 text-red-800':'bg-gray-200 text-gray-600 hover:bg-red-100'}`} onClick={()=>updateResp(it.id,0,false,'no')}>No</button></td>
+                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${noSel?'bg-red-200 text-red-800':'bg-gray-200 text-gray-600 hover:bg-red-100'}`} onClick={()=>updateResp(it.id,(it.id==='LMS_1'||it.id==='LMS_2')? -it.w : 0,false,'no')}>No</button></td>
                       <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${naSel?'bg-amber-200 text-amber-800':'bg-gray-200 text-gray-600 hover:bg-amber-100'}`} onClick={()=>updateResp(it.id,0,true)}>NA</button></td>
                     </tr>);})}
                 </tbody>
