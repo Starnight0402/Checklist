@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-gray-50 p-6">
@@ -90,6 +91,36 @@
       const [responses, setResponses] = useState(JSON.parse(localStorage.getItem('responses')) || {});
       const [imgs, setImgs] = useState(JSON.parse(localStorage.getItem('imgs')) || {});
 
+      const resetOrientation = (src, orientation) => new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const width = img.width;
+          const height = img.height;
+          if ([5, 6, 7, 8].includes(orientation)) {
+            canvas.width = height;
+            canvas.height = width;
+          } else {
+            canvas.width = width;
+            canvas.height = height;
+          }
+          switch (orientation) {
+            case 2: ctx.transform(-1, 0, 0, 1, width, 0); break;
+            case 3: ctx.transform(-1, 0, 0, -1, width, height); break;
+            case 4: ctx.transform(1, 0, 0, -1, 0, height); break;
+            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+            case 6: ctx.transform(0, 1, -1, 0, height, 0); break;
+            case 7: ctx.transform(0, -1, -1, 0, height, width); break;
+            case 8: ctx.transform(0, -1, 1, 0, 0, width); break;
+            default: break;
+          }
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg'));
+        };
+        img.src = src;
+      });
+
       useEffect(() => {
         const save = () => {
           localStorage.setItem('storeName', storeName);
@@ -109,10 +140,18 @@
 
       const pickImages = (sectionId, e) => {
         Array.from(e.target.files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = () => setImgs(prev => ({ ...prev, [sectionId]: [...(prev[sectionId]||[]), reader.result] }));
-          reader.readAsDataURL(file);
-        }); e.target.value = null;
+          EXIF.getData(file, function() {
+            const orientation = EXIF.getTag(this, 'Orientation') || 1;
+            const reader = new FileReader();
+            reader.onload = async ev => {
+              let src = ev.target.result;
+              if (orientation !== 1) src = await resetOrientation(src, orientation);
+              setImgs(prev => ({ ...prev, [sectionId]: [...(prev[sectionId] || []), src] }));
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+        e.target.value = null;
       };
 
       const allAnswered = CHECKLIST.sections.every(sec => sec.items.every(it => {
@@ -153,7 +192,7 @@
         CHECKLIST.sections.forEach(sec => {
           doc.setFontSize(12);
           doc.text(sec.title, 20, y); y += 6;
-          (imgs[sec.id]||[]).forEach(src => { doc.addImage(src,'JPEG',20,y,30,30); y+=34; if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;} });
+          (imgs[sec.id]||[]).forEach(src => { doc.addImage(src,'JPEG',20,y,30,0); y+=34; if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;} });
           const rows = sec.items.map(it => {
             const r = responses[it.id] || { score:0, na:false };
             return [it.q, r.na?'NA':(r.score===it.w?'Yes':'No'), r.na?'NA':r.score];
