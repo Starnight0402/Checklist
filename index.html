@@ -190,16 +190,16 @@
               </table>
             </section>
           ))}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <button
               type="button"
               onClick={() => {setStoreName(''); setStoreId(''); setResponses({}); setImgs({}); localStorage.clear();}}
-              className="w-1/2 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow"
+              className="w-full sm:w-1/2 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow"
             >New Response</button>
             <button
               type="submit"
               disabled={!allAnswered}
-              className={`w-1/2 ${allAnswered?'bg-green-500 hover:bg-green-600':'bg-gray-400 cursor-not-allowed'} text-white py-3 rounded-lg shadow`}
+              className={`w-full sm:w-1/2 ${allAnswered?'bg-green-500 hover:bg-green-600':'bg-gray-400 cursor-not-allowed'} text-white py-3 rounded-lg shadow`}
             >Submit & Download PDF</button>
           </div>
         </form>
