@@ -103,76 +103,89 @@
       }, [storeName, storeId, responses, imgs]);
 
       const updateResp = (id, score, na, vib) => {
-        if (vib === 'yes') navigator.vibrate(50);
-        if (vib === 'no') navigator.vibrate([50, 50]);
-        setResponses(prev => ({ ...prev, [id]: { score, na } }));
+        if (vib==='yes') navigator.vibrate(50);
+        if (vib==='no') navigator.vibrate([50,50]);
+        setResponses(prev=>({...prev,[id]:{score,na}}));
       };
-      const pickImages = (sectionId, e) => { EXIF.getData(e.target.files[0], function(){}); /* logic */ };
 
-      const allAnswered = CHECKLIST.sections.every(sec => sec.items.every(it => {
-        const r = responses[it.id] || { score: null, na: false };
-        return r.score !== null || r.na;
+      const pickImages = (secId,e)=>{
+        Array.from(e.target.files).forEach(file=>{
+          EXIF.getData(file,function(){
+            const orient=EXIF.getTag(this,'Orientation')||1;
+            const reader=new FileReader();reader.onload=async ev=>{
+              let src=ev.target.result;
+              if(orient!==1){
+                const img=new Image();img.onload=()=>{
+                  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+                  c.width=img.width; c.height=img.height;
+                  ctx.drawImage(img,0,0);
+                  src=c.toDataURL('image/jpeg');
+                  setImgs(prev=>({...prev,[secId]:[...(prev[secId]||[]),src]}));
+                };img.src=src;
+              } else setImgs(prev=>({...prev,[secId]:[...(prev[secId]||[]),src]}));
+            };reader.readAsDataURL(file);
+          });
+        });e.target.value=null;
+      };
+
+      const allAnswered = CHECKLIST.sections.every(sec=>sec.items.every(it=>{
+        const r=responses[it.id]||{score:null,na:false};return r.score!==null||r.na;
       }));
 
-      const handleSubmit = async e => { /* logic */ };
+      const handleSubmit=async e=>{
+        e.preventDefault();navigator.vibrate&&navigator.vibrate(100);
+        if(!allAnswered){alert('Please answer all questions.');return;}
+        let total=0,max=0,yes=0,no=0,na=0;
+        CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{
+          const r=responses[it.id]||{score:0,na:false};
+          if(r.na)na++;else{total+=r.score;max+=it.w;r.score===it.w?yes++:no++;}
+        }));
+        const pct=max?Math.round(total/max*100):0;
+        try{await fetch('https://script.google.com/macros/s/AKfycbw3DkJa6FIZwTnAhelY_h0UcUTozRaC3xETOOO0WgXNwFUm8ZoQw2cKTm1v1bA5ITgp/exec',{
+          method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({auditorName,auditorId,storeName,storeId,total,pct})
+        });}catch{}
+        const doc=new window.jspdf.jsPDF();
+        doc.setFontSize(16);doc.text(`Training Audit Report | ${storeName}`,doc.internal.pageSize.getWidth()/2,20,{align:'center'});
+        doc.setFontSize(10);doc.text(`Auditor: ${auditorName} (ID ${auditorId})`,20,40);doc.text(`Store: ${storeName} (ID ${storeId})`,140,40);
+        doc.setFontSize(14);doc.text(`Score: ${total} / ${max} (${pct}%)`,doc.internal.pageSize.getWidth()/2,55,{align:'center'});
+        let y=65;
+        CHECKLIST.sections.forEach(sec=>{
+          doc.setFontSize(12);doc.text(sec.title,20,y);y+=6;
+          (imgs[sec.id]||[]).forEach(src=>{doc.addImage(src,'JPEG',20,y,30,30);y+=34;if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;}});
+          const rows=sec.items.map(it=>{const r=responses[it.id]||{score:0,na:false};return[it.q,r.na?'NA':(r.score===it.w?'Yes':'No'),r.na?'NA':r.score];});
+          doc.autoTable({startY:y,head:[['Question','Response','Score']],body:rows,styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[200,200,200]}});
+          y=doc.lastAutoTable.finalY+10;if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;}
+        });
+        alert('Report logged and downloaded');doc.save(`audit_${auditorId}_${Date.now()}.pdf`);localStorage.clear();
+      };
 
-      return (
+      return(
         <form onSubmit={handleSubmit} className="space-y-6">
           <h1 className="text-3xl font-bold text-center mb-4">Training Audit Checklist</h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <input readOnly value={auditorName} className="p-2 border rounded bg-gray-200" />
-            <input readOnly value={auditorId} className="p-2 border rounded bg-gray-200" />
-            <input value={storeName} onChange={e => setStoreName(e.target.value)} required placeholder="Store Name" className="p-2 border rounded" />
-            <input value={storeId} onChange={e => setStoreId(e.target.value)} required placeholder="Store ID" className="p-2 border rounded" />
+            <input readOnly value={auditorName} className="p-2 border rounded bg-gray-200"/>
+            <input readOnly value={auditorId} className="p-2 border rounded bg-gray-200"/>
+            <input value={storeName} onChange={e=>setStoreName(e.target.value)} required placeholder="Store Name" className="p-2 border rounded"/>
+            <input value={storeId} onChange={e=>setStoreId(e.target.value)} required placeholder="Store ID" className="p-2 border rounded"/>
           </div>
-          {CHECKLIST.sections.map(sec => (
+          {CHECKLIST.sections.map(sec=>(
             <section key={sec.id} className="bg-white p-4 rounded shadow mb-6">
               <h2 className="text-xl font-semibold text-center mb-4">{sec.title}</h2>
-              <input type="file" accept="image/*" capture="environment" multiple onChange={e => pickImages(sec.id, e)} className="mb-4" />
-              <div className="flex space-x-2 mb-4">{(imgs[sec.id] || []).map((src, i) => <img key={i} src={src} className="w-12 h-12 rounded shadow" />)}</div>
+              <input type="file" accept="image/*" capture="environment" multiple onChange={e=>pickImages(sec.id,e)} className="mb-4"/>
+              <div className="flex space-x-2 mb-4">{(imgs[sec.id]||[]).map((src,i)=><img key={i} src={src} className="w-12 h-12 rounded shadow"/>)}</div>
               <table className="w-full table-auto border-collapse border border-gray-300 text-sm">
                 <thead>
-                  <tr>
-                    <th className="border p-2">Question</th>
-                    <th className="border p-2">Yes</th>
-                    <th className="border p-2">No</th>
-                    <th className="border p-2">NA</th>
-                  </tr>
+                  <tr><th className="border p-2">Question</th><th className="border p-2">Yes</th><th className="border p-2">No</th><th className="border p-2">NA</th></tr>
                 </thead>
                 <tbody>
-                  {sec.items.map(it => {
-                    const r = responses[it.id] || { score: null, na: false };
-                    const yesSel = r.score === it.w;
-                    const noSel = r.score === 0 && !r.na;
-                    const naSel = r.na;
-                    return (
-                      <tr key={it.id} className="odd:bg-gray-50 hover:bg-gray-100">
-                        <td className="border p-2 align-middle">{it.q}</td>
-                        <td className="border p-2 align-middle">
-                          <button
-                            type="button"
-                            className={`w-full py-1 rounded-lg ${yesSel?'bg-green-200 text-green-800':'bg-gray-200 text-gray-600 hover:bg-green-100'}`}
-                            onClick={() => updateResp(it.id, it.w, false, 'yes')}
-                          >Yes</button>
-                        </td>
-                        <td className="border p-2 align-middle">
-                          <button
-                            type="button"
-                            className={`w-full py-1 rounded-lg ${noSel?'bg-red-200 text-red-800':'bg-gray-200 text-gray-600 hover:bg-red-100'}`}
-                            onClick={() => updateResp(it.id, 0, false, 'no')}
-                          >No</button>
-                        </td>
-                        <td className="border p-2 align-middle">
-                          <button
-                            type="button"
-                            className={`w-full py-1 rounded-lg ${naSel?'bg-amber-200 text-amber-800':'bg-gray-200 text-gray-600 hover:bg-amber-100'}`}
-                            onClick={() => updateResp(it.id, 0, true)}
-                            disabled={naSel}
-                          >NA</button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {sec.items.map(it=>{const r=responses[it.id]||{score:null,na:false};const yesSel=r.score===it.w;const noSel=r.score===0&&!r.na;const naSel=r.na;return(
+                    <tr key={it.id} className="odd:bg-gray-50 hover:bg-gray-100">
+                      <td className="border p-2 align-middle">{it.q}</td>
+                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${yesSel?'bg-green-200 text-green-800':'bg-gray-200 text-gray-600 hover:bg-green-100'}`} onClick={()=>updateResp(it.id,it.w,false,'yes')}>Yes</button></td>
+                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${noSel?'bg-red-200 text-red-800':'bg-gray-200 text-gray-600 hover:bg-red-100'}`} onClick={()=>updateResp(it.id,0,false,'no')}>No</button></td>
+                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${naSel?'bg-amber-200 text-amber-800':'bg-gray-200 text-gray-600 hover:bg-amber-100'}`} onClick={()=>updateResp(it.id,0,true)}>NA</button></td>
+                    </tr>);})}
                 </tbody>
               </table>
             </section>
@@ -181,7 +194,7 @@
         </form>
       );
     }
-    ReactDOM.createRoot(document.getElementById('root')).render(<AuditForm />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<AuditForm/>);
   </script>
 </body>
 </html>
