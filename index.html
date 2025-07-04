@@ -107,14 +107,14 @@
         if (vib === 'no') navigator.vibrate([50, 50]);
         setResponses(prev => ({ ...prev, [id]: { score, na } }));
       };
-      const pickImages = (sectionId, e) => { /* image logic */ };
+      const pickImages = (sectionId, e) => { EXIF.getData(e.target.files[0], function(){}); /* logic */ };
 
       const allAnswered = CHECKLIST.sections.every(sec => sec.items.every(it => {
         const r = responses[it.id] || { score: null, na: false };
         return r.score !== null || r.na;
       }));
 
-      const handleSubmit = async e => { /* submit logic */ };
+      const handleSubmit = async e => { /* logic */ };
 
       return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -130,7 +130,7 @@
               <h2 className="text-xl font-semibold text-center mb-4">{sec.title}</h2>
               <input type="file" accept="image/*" capture="environment" multiple onChange={e => pickImages(sec.id, e)} className="mb-4" />
               <div className="flex space-x-2 mb-4">{(imgs[sec.id] || []).map((src, i) => <img key={i} src={src} className="w-12 h-12 rounded shadow" />)}</div>
-              <table className="w-full table-auto border-collapse border border-gray-300">
+              <table className="w-full table-auto border-collapse border border-gray-300 text-sm">
                 <thead>
                   <tr>
                     <th className="border p-2">Question</th>
@@ -148,24 +148,24 @@
                     return (
                       <tr key={it.id} className="odd:bg-gray-50 hover:bg-gray-100">
                         <td className="border p-2 align-middle">{it.q}</td>
-                        <td className="border p-2 align-middle text-center">
+                        <td className="border p-2 align-middle">
                           <button
                             type="button"
-                            className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium transition ${yesSel ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600 hover:bg-green-100'}`}
+                            className={`w-full py-1 rounded-lg ${yesSel?'bg-green-200 text-green-800':'bg-gray-200 text-gray-600 hover:bg-green-100'}`}
                             onClick={() => updateResp(it.id, it.w, false, 'yes')}
                           >Yes</button>
                         </td>
-                        <td className="border p-2 align-middle text-center">
+                        <td className="border p-2 align-middle">
                           <button
                             type="button"
-                            className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium transition ${noSel ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-600 hover:bg-red-100'}`}
+                            className={`w-full py-1 rounded-lg ${noSel?'bg-red-200 text-red-800':'bg-gray-200 text-gray-600 hover:bg-red-100'}`}
                             onClick={() => updateResp(it.id, 0, false, 'no')}
                           >No</button>
                         </td>
-                        <td className="border p-2 align-middle text-center">
+                        <td className="border p-2 align-middle">
                           <button
                             type="button"
-                            className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium transition ${naSel ? 'bg-amber-200 text-amber-800' : 'bg-gray-200 text-gray-600 hover:bg-amber-100'}`}
+                            className={`w-full py-1 rounded-lg ${naSel?'bg-amber-200 text-amber-800':'bg-gray-200 text-gray-600 hover:bg-amber-100'}`}
                             onClick={() => updateResp(it.id, 0, true)}
                             disabled={naSel}
                           >NA</button>
@@ -177,7 +177,7 @@
               </table>
             </section>
           ))}
-          <button type="submit" disabled={!allAnswered} className={`w-full ${allAnswered ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed'} text-white py-3 rounded-lg shadow`}>Submit & Download PDF</button>
+          <button type="submit" disabled={!allAnswered} className={`w-full ${allAnswered?'bg-green-500 hover:bg-green-600':'bg-gray-400 cursor-not-allowed'} text-white py-3 rounded-lg shadow`}>Submit & Download PDF</button>
         </form>
       );
     }
