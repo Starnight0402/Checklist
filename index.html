@@ -3,212 +3,177 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Training Audit Checklist</title>
+  <title>Training Audit | Third wave coffee</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-gray-50 p-6">
-  <div id="root" class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6"></div>
+<body class="bg-gray-100 p-6">
+  <div id="root" class="max-w-4xl mx-auto"></div>
   <script type="text/babel">
     const { useState, useEffect } = React;
-    const CHECKLIST = { sections: [
-      { id: 'Training Materials', title: 'Training Materials', items: [
-        { id: 'TM_1', q: 'FRM available at store?', w: 1 },
-        { id: 'TM_2', q: 'BRM available at store?', w: 1 },
-        { id: 'TM_3', q: 'One-pager – Hot/Cue Cards displayed?', w: 1 },
-        { id: 'TM_4', q: 'One-pager – Cold/Cue Cards displayed?', w: 1 },
-        { id: 'TM_5', q: 'Dial-in One-pager visible?', w: 2 },
-        { id: 'TM_6', q: 'New-launch learning material posted?', w: 1 },
-        { id: 'TM_7', q: 'COFFEE Playbook in store?', w: 1 },
-        { id: 'TM_8', q: 'Shelf-life chart displayed?', w: 1 },
-        { id: 'TM_9', q: 'Career progression chart displayed?', w: 1 }
+    const params = new URLSearchParams(window.location.search);
+    const auditorName = params.get('auditorName')||params.get('name')||'';
+    const auditorId   = params.get('auditorId')||params.get('id')||'';
+    const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzlorpE-XN1Fkxdf156d84gWmpWUluBO8mrJWkxelG2L0AEdry0BXS1NM08CCJ7ZNYZ/exec';
+
+    const safeVibrate = pattern => { if(navigator?.vibrate) navigator.vibrate(pattern); };
+    const safeLS = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, clear:()=>{try{localStorage.clear()}catch{}} };
+    const logEvent = (e,d={})=>{ fetch(LOG_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:e,timestamp:new Date().toISOString(),...d})}); };
+
+    const SECTIONS = [
+      { id:'Training Materials', title:'Training Materials', items:[
+        {id:'TM_1',q:'FRM available at store?',w:1},
+        {id:'TM_2',q:'BRM available at store?',w:1},
+        {id:'TM_3',q:'One-pager – Hot/Cue Cards displayed?',w:1},
+        {id:'TM_4',q:'One-pager – Cold/Cue Cards displayed?',w:1},
+        {id:'TM_5',q:'Dial-in One-pager visible?',w:2},
+        {id:'TM_6',q:'New-launch learning material posted?',w:1},
+        {id:'TM_7',q:'COFFEE & HD Playbook in store?',w:1},
+        {id:'TM_8',q:'MSDS, chemical chart and Shelf life chart available?',w:1},
+        {id:'TM_9',q:'Career Progression Chart & Reward Poster displayed?',w:1}
       ]},
-      { id: 'LMS', title: 'LMS Usage', items: [
-        { id: 'LMS_1', q: 'Orientation & Induction completed within 3 days?', w: 4 },
-        { id: 'LMS_2', q: 'All assessments & knowledge checks on LMS?', w: 4 },
-        { id: 'LMS_3', q: 'Team uses LMS for new info & comms?', w: 2 }
+      { id:'LMS', title:'LMS Usage', items:[
+        {id:'LMS_1',q:'Orientation & Induction completed within 3 days of joining?',w:4},
+        {id:'LMS_2',q:'All assessments & knowledge checks on LMS?',w:4},
+        {id:'LMS_3',q:'Team uses LMS for new information & comms?',w:2}
       ]},
-      { id: 'Buddy', title: 'Buddy Trainer Capabilities', items: [
-        { id: 'Buddy_1', q: '≥2 certified Buddy Trainers in café?', w: 2 },
-        { id: 'Buddy_2', q: 'Buddy Trainers passed skill checks?', w: 2 },
-        { id: 'Buddy_3', q: 'Trainees rostered with Buddies?', w: 2 },
-        { id: 'Buddy_4', q: 'Logbook up-to-date?', w: 1 },
-        { id: 'Buddy_5', q: 'Badge worn during training?', w: 1 },
-        { id: 'Buddy_6', q: 'Schedules visible?', w: 1 },
-        { id: 'Buddy_7', q: 'Monthly feedback sessions?', w: 1 }
+      { id:'Buddy', title:'Buddy Trainer Availability & Capability', items:[
+        {id:'Buddy_1',q:'Does the café have at least 2 certified Buddy Trainers?',w:2},
+        {id:'Buddy_2',q:'Have Buddy Trainers completed their Skill Check?',w:2},
+        {id:'Buddy_3',q:'Are trainees rostered with Buddy Trainers and working in the same shift?',w:1},
+        {id:'Buddy_4',q:'Have Buddy Trainers attended the BT workshop?',w:2},
+        {id:'Buddy_5',q:'Can Buddy Trainers explain the 4-step training process effectively?',w:2},
+        {id:'Buddy_6',q:'Can Buddy Trainers navigate Zing LMS flawlessly?',w:1}
       ]},
-      { id: 'NewJoiner', title: 'New Joiner Training', items: [
-        { id: 'NJ_1', q: 'Tracker updated?', w: 2 },
-        { id: 'NJ_2', q: '15-day cert completed?', w: 2 },
-        { id: 'NJ_3', q: 'Skill gaps documented?', w: 1 },
-        { id: 'NJ_4', q: 'Training wall current?', w: 1 },
-        { id: 'NJ_5', q: 'Learning plan filed?', w: 1 },
-        { id: 'NJ_6', q: 'Cert cards issued?', w: 1 },
-        { id: 'NJ_7', q: 'Refresher logged?', w: 1 }
+      { id:'NewJoiner', title:'New Joiner Training & Records', items:[
+        {id:'NJ_1',q:'Is the OJT book available for all partners?',w:1},
+        {id:'NJ_2',q:'Are trainees referring to the OJT book and completing their skill checks?',w:1},
+        {id:'NJ_3',q:'Is training progression aligned with the Training Calendar/Plan?',w:1},
+        {id:'NJ_4',q:'Are team members aware of post-barista training progressions?',w:1},
+        {id:'NJ_5',q:'Have managers completed SHLP training as per the calendar?',w:2},
+        {id:'NJ_6',q:'Are there at least 2 FOSTAC-certified managers in the store?',w:2},
+        {id:'NJ_7',q:'Is ASM/SM training completed as per the Training Calendar?',w:2}
       ]},
-      { id: 'Partner', title: 'Partner Knowledge', items: [
-        { id: 'PK_1', q: 'Team knows company comms?', w: 1 },
-        { id: 'PK_2', q: 'Tasting & sampling done?', w: 1 },
-        { id: 'PK_3', q: 'Sampling follows guidelines?', w: 1 },
-        { id: 'PK_4', q: 'Tasting engaging?', w: 1 },
-        { id: 'PK_5', q: 'Team knows manual brew?', w: 1 },
-        { id: 'PK_6', q: 'Grooming standards met?', w: 1 },
-        { id: 'PK_7', q: 'Pop-quiz passed?', w: 1 }
+      { id:'PartnerKnowledge', title:'Partner Knowledge', items:[
+        {id:'PK_1',q:'Are team members aware of current company communications?',w:2},
+        {id:'PK_2',q:'Ask a team member to conduct a Coffee Tasting & Sampling',w:2},
+        {id:'PK_3',q:'Is Sampling being conducted as per the set guidelines?',w:2},
+        {id:'PK_4',q:'Is Coffee Tasting engaging and effective?',w:2},
+        {id:'PK_5',q:'Are team members aware of manual brewing methods and standards?',w:2},
+        {id:'PK_6',q:'Are partners following grooming standards?',w:2},
+        {id:'PK_7',q:'Ask questions about key topics: COFFEE, LTO, MSDS, Safety?',w:3}
       ]},
-      { id: 'TSA', title: 'Skill Assessment', items: [
-        { id: 'TSA_1', q: 'Hot & Cold stations work?', w: 1 },
-        { id: 'TSA_2', q: 'Food station cleanliness?', w: 1 },
-        { id: 'TSA_3', q: 'Customer Service quality?', w: 1 }
+      { id:'TSA', title:'TSA - Training Skill Assessment', items:[
+        {id:'TSA_1',q:'Partner 1 – Hot & Cold stations work?',w:10},
+        {id:'TSA_2',q:'Partner 2 – Food station cleanliness?',w:10},
+        {id:'TSA_3',q:'Partner 3 – Customer Service quality?',w:10}
       ]},
-      { id: 'CX', title: 'Customer Experience', items: [
-        { id: 'CX_1', q: 'Music at right volume?', w: 1 },
-        { id: 'CX_2', q: 'Temperature comfortable?', w: 1 },
-        { id: 'CX_3', q: 'Washrooms clean?', w: 1 },
-        { id: 'CX_4', q: 'Wi-Fi working?', w: 1 },
-        { id: 'CX_5', q: 'VM elements correct?', w: 1 },
-        { id: 'CX_6', q: 'Furniture well-kept?', w: 1 },
-        { id: 'CX_7', q: 'Staff know metrics?', w: 1 },
-        { id: 'CX_8', q: 'Latest Mystery Audit score?', w: 1 },
-        { id: 'CX_9', q: 'Top 2 CX opps named?', w: 1 }
+      { id:'CustomerExperience', title:'Customer Experience', items:[
+        {id:'CX_1',q:'Is background music at appropriate volume?',w:1},
+        {id:'CX_2',q:'Is store temperature comfortable?',w:1},
+        {id:'CX_3',q:'Are washrooms clean & well-maintained?',w:1},
+        {id:'CX_4',q:'Is Wi-Fi available & functioning?',w:1},
+        {id:'CX_5',q:'Are marketing & VM displays correct?',w:2},
+        {id:'CX_6',q:'Is store furniture clean & well-kept?',w:1},
+        {id:'CX_7',q:'What do you understand by MA, CPI, QA scores?',w:1},
+        {id:'CX_8',q:'What was the latest Mystery Audit score for the store?',w:1},
+        {id:'CX_9',q:'Top 2 CX opportunity areas last month?',w:1}
       ]},
-      { id: 'AP', title: 'Action Plan', items: [
-        { id: 'AP_1', q: 'Concerns addressed?', w: 2 },
-        { id: 'AP_2', q: 'Managers aware?', w: 3 }
+      { id:'ActionPlan', title:'Action Plan & Continuous Improvement', items:[
+        {id:'AP_1',q:'Have concerns been addressed within 48hrs of audit?',w:1},
+        {id:'AP_2',q:'Are action plan points closed or in progress?',w:2},
+        {id:'AP_3',q:'Are all managers aware of the action plan?',w:2}
       ]}
-    ]};
+    ];
+    const optionColors = { yes:'green', no:'red', na:'yellow' };
+    const options = Object.entries(optionColors);
 
-    function AuditForm() {
-      const params = new URLSearchParams(window.location.search);
-      const auditorName = params.get('name') || '';
-      const auditorId = params.get('id') || '';
-      const [storeName, setStoreName] = useState(localStorage.getItem('storeName') || '');
-      const [storeId, setStoreId] = useState(localStorage.getItem('storeId') || '');
-      const [responses, setResponses] = useState(JSON.parse(localStorage.getItem('responses')) || {});
-      const [imgs, setImgs] = useState(JSON.parse(localStorage.getItem('imgs')) || {});
+    function App(){
+      const [resp,setResp] = useState(()=>JSON.parse(safeLS.get('resp')||'{}'));
+      const [storeName,setStoreName] = useState(safeLS.get('storeName')||'');
+      const [storeId,setStoreId] = useState(safeLS.get('storeId')||'');
+      const [imgs,setImgs] = useState(()=>JSON.parse(safeLS.get('imgs')||'{}'));
 
-      useEffect(() => {
-        const save = () => {
-          localStorage.setItem('storeName', storeName);
-          localStorage.setItem('storeId', storeId);
-          localStorage.setItem('responses', JSON.stringify(responses));
-          localStorage.setItem('imgs', JSON.stringify(imgs));
-        };
-        window.addEventListener('beforeunload', save);
-        return () => window.removeEventListener('beforeunload', save);
-      }, [storeName, storeId, responses, imgs]);
+      useEffect(()=>{logEvent('PageLoaded',{auditorName,auditorId,storeName,storeId});},[]);
+      useEffect(()=>{const save=()=>{safeLS.set('resp',JSON.stringify(resp));safeLS.set('storeName',storeName);safeLS.set('storeId',storeId);safeLS.set('imgs',JSON.stringify(imgs));};window.addEventListener('beforeunload',save);return()=>window.removeEventListener('beforeunload',save);},[resp,storeName,storeId,imgs]);
 
-      const updateResp = (id, score, na, vib) => {
-        if (vib==='yes') navigator.vibrate(50);
-        if (vib==='no') navigator.vibrate([30,50]);
-        setResponses(prev=>({...prev,[id]:{score,na}}));
+      const handleOption = (sec,it,val) => {
+        const key = `${sec}_${it}`;
+        setResp(prev=>({...prev,[key]:val}));
+        logEvent('change',{key,val});
+        // Haptics: yes=1, no=2, na=0
+        if(navigator?.vibrate){
+          if(val==='yes') safeVibrate(50);
+          else if(val==='no') safeVibrate([50,100,50]);
+        }
       };
-
-      const pickImages = (secId,e)=>{
-        Array.from(e.target.files).forEach(file=>{
-          EXIF.getData(file,function(){
-            const orient=EXIF.getTag(this,'Orientation')||1;
-            const reader=new FileReader();reader.onload=async ev=>{
-              let src=ev.target.result;
-              if(orient!==1){
-                const img=new Image();img.onload=()=>{
-                  const c=document.createElement('canvas'),ctx=c.getContext('2d');
-                  c.width=img.width; c.height=img.height;
-                  ctx.drawImage(img,0,0);
-                  src=c.toDataURL('image/jpeg');
-                  setImgs(prev=>({...prev,[secId]:[...(prev[secId]||[]),src]}));
-                };img.src=src;
-              } else setImgs(prev=>({...prev,[secId]:[...(prev[secId]||[]),src]}));
-            };reader.readAsDataURL(file);
-          });
-        });e.target.value=null;
+      const handleTSA = (sec,it,val) => {
+        const key = `${sec}_${it}`;
+        setResp(prev=>({...prev,[key]:val}));
+        logEvent('change',{key,val});
+        // no vibration for TSA options
       };
+      const addImages=(sec,e)=>{Array.from(e.target.files).forEach(f=>{EXIF.getData(f,function(){const r=new FileReader();r.onload=ev=>setImgs(p=>({...p,[sec]:[...(p[sec]||[]),ev.target.result]}));r.readAsDataURL(f);});});e.target.value=null;};
+      const scrollTo=(id)=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});};
 
-      const allAnswered = CHECKLIST.sections.every(sec=>sec.items.every(it=>{
-        const r=responses[it.id]||{score:null,na:false};
-                    const yesSel=r.score===it.w;
-                    const noSel=(it.id==='LMS_1'||it.id==='LMS_2')? r.score<0 : (r.score===0&&!r.na);
-                    const naSel=r.na;return r.score!==null||r.na;
-      }));
-
-      const handleSubmit=async e=>{
-        e.preventDefault();navigator.vibrate&&navigator.vibrate(100);
-        if(!allAnswered){alert('Please answer all questions.');return;}
-        let total=0,max=0,yes=0,no=0,na=0;
-        CHECKLIST.sections.forEach(sec=>sec.items.forEach(it=>{
-          const r=responses[it.id]||{score:0,na:false};
-          if(r.na)na++;else{total+=r.score;max+=it.w;r.score===it.w?yes++:no++;}
-        }));
-        const pct=max?Math.round(total/max*100):0;
-        try{await fetch('https://script.google.com/macros/s/AKfycbw3DkJa6FIZwTnAhelY_h0UcUTozRaC3xETOOO0WgXNwFUm8ZoQw2cKTm1v1bA5ITgp/exec',{
-          method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({auditorName,auditorId,storeName,storeId,total,pct})
-        });}catch{}
-        const doc=new window.jspdf.jsPDF();
-        doc.setFontSize(16);doc.text(`Training Audit Report | ${storeName}`,doc.internal.pageSize.getWidth()/2,20,{align:'center'});
-        doc.setFontSize(10);doc.text(`Auditor: ${auditorName} (ID ${auditorId})`,20,40);doc.text(`Store: ${storeName} (ID ${storeId})`,140,40);
-        doc.setFontSize(14);doc.text(`Score: ${total} / ${max} (${pct}%)`,doc.internal.pageSize.getWidth()/2,55,{align:'center'});
-        let y=65;
-        CHECKLIST.sections.forEach(sec=>{
-          doc.setFontSize(12);doc.text(sec.title,20,y);y+=6;
-          (imgs[sec.id]||[]).forEach(src=>{doc.addImage(src,'JPEG',20,y,30,30);y+=34;if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;}});
-          const rows=sec.items.map(it=>{const r=responses[it.id]||{score:0,na:false};return[it.q,r.na?'NA':(r.score===it.w?'Yes':'No'),r.na?'NA':r.score];});
-          doc.autoTable({startY:y,head:[['Question','Response','Score']],body:rows,styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[200,200,200]}});
-          y=doc.lastAutoTable.finalY+10;if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=20;}
-        });
-        alert('Report logged and downloaded');doc.save(`audit_${auditorId}_${Date.now()}.pdf`);localStorage.clear();
+      const handleSubmit=e=>{
+        e.preventDefault();
+        // validate header
+        if(!storeName.trim()){safeVibrate(200);scrollTo('storeName');return;}
+        if(!storeId.trim()){safeVibrate(200);scrollTo('storeId');return;}
+        // validate questions
+        for(const sec of SECTIONS){for(const it of sec.items){const key=`${sec.id}_${it.id}`;if(resp[key]==null){safeVibrate(200);scrollTo(key);return;}}}
+        safeVibrate(100);
       };
+      const resetAll=()=>{safeLS.clear();setResp({});setStoreName('');setStoreId('');setImgs({});safeVibrate([200]);};
 
       return(
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <h1 className="text-3xl font-bold text-center mb-4">Training Audit Checklist</h1>
+        <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-white rounded-lg shadow">
+          <h1 className="text-2xl font-bold text-center">Training Audit | Third wave coffee</h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <input readOnly value={auditorName} className="p-2 border rounded bg-gray-200"/>
-            <input readOnly value={auditorId} className="p-2 border rounded bg-gray-200"/>
-            <input value={storeName} onChange={e=>setStoreName(e.target.value)} required placeholder="Store Name" className="p-2 border rounded"/>
-            <input value={storeId} onChange={e=>setStoreId(e.target.value)} required placeholder="Store ID" className="p-2 border rounded"/>
+            <div><label className="block text-sm">Auditor Name</label><input id="auditorName" readOnly value={auditorName} className="w-full p-2 border rounded bg-gray-100"/></div>
+            <div><label className="block text-sm">Auditor ID</label><input id="auditorId" readOnly value={auditorId} className="w-full p-2 border rounded bg-gray-100"/></div>
+            <div><label htmlFor="storeName" className="block text-sm">Store Name</label><input id="storeName" value={storeName} onChange={e=>setStoreName(e.target.value)} className="w-full p-2 border rounded"/></div>
+            <div><label htmlFor="storeId" className="block text-sm">Store ID</label><input id="storeId" value={storeId} onChange={e=>setStoreId(e.target.value)} className="w-full p-2 border rounded"/></div>
           </div>
-          {CHECKLIST.sections.map(sec=>(
-            <section key={sec.id} className="bg-white p-4 rounded shadow mb-6">
-              <h2 className="text-xl font-semibold text-center mb-4">{sec.title}</h2>
-              <input type="file" accept="image/*" capture="environment" multiple onChange={e=>pickImages(sec.id,e)} className="mb-4"/>
-              <div className="flex space-x-2 mb-4">{(imgs[sec.id]||[]).map((src,i)=><img key={i} src={src} className="w-12 h-12 rounded shadow"/>)}</div>
-              <table className="w-full table-auto border-collapse border border-gray-300 text-sm">
-                <thead>
-                  <tr><th className="border p-2">Question</th><th className="border p-2">Yes</th><th className="border p-2">No</th><th className="border p-2">NA</th></tr>
-                </thead>
-                <tbody>
-                  {sec.items.map(it=>{const r=responses[it.id]||{score:null,na:false};const yesSel=r.score===it.w;const noSel=r.score===0&&!r.na;const naSel=r.na;return(
-                    <tr key={it.id} className="odd:bg-gray-50 hover:bg-gray-100">
-                      <td className="border p-2 align-middle">{it.q}</td>
-                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${yesSel?'bg-green-200 text-green-800':'bg-gray-200 text-gray-600 hover:bg-green-100'}`} onClick={()=>updateResp(it.id,it.w,false,'yes')}>Yes</button></td>
-                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${noSel?'bg-red-200 text-red-800':'bg-gray-200 text-gray-600 hover:bg-red-100'}`} onClick={()=>updateResp(it.id,(it.id==='LMS_1'||it.id==='LMS_2')? -it.w : 0,false,'no')}>No</button></td>
-                      <td className="border p-2 align-middle"><button type="button" className={`w-full py-1 rounded-lg ${naSel?'bg-amber-200 text-amber-800':'bg-gray-200 text-gray-600 hover:bg-amber-100'}`} onClick={()=>updateResp(it.id,0,true)}>NA</button></td>
-                    </tr>);})}
-                </tbody>
-              </table>
-            </section>
+          {SECTIONS.map(sec=>(
+            <div key={sec.id} className="mb-6 bg-white rounded-lg shadow" id={`${sec.id}-section`}>
+              <div className="px-4 py-2 border-b"><h2 className="text-lg font-semibold">{sec.title}</h2></div>
+              <div className="p-4 overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                  <thead><tr className="bg-gray-100"><th className="border px-3 py-2 text-left">Question</th>
+                    {sec.id==='TSA'
+                      ? [10,5,0].map(val=><th key={val} className="border px-2 py-1 text-center text-xs">{val}</th>)
+                      : options.map(([opt])=><th key={opt} className="border px-2 py-1 text-center text-xs uppercase">{opt}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {sec.items.map(it=>{
+                      const key=`${sec.id}_${it.id}`;
+                      return(
+                        <tr id={key} key={it.id} className="even:bg-gray-50 hover:bg-gray-50">
+                          <td className="border px-3 py-2">{it.q}</td>
+                          {sec.id==='TSA'
+                            ? [10,5,0].map(val=>{ const sel=resp[key]===String(val); return (<td key={val} className="border px-2 py-1 text-center"><button type="button" onClick={()=>handleTSA(sec.id,it.id,String(val))} className={`${sel?'bg-blue-200 ring-2 ring-blue-500':'bg-gray-200'} hover:bg-blue-300 px-2 py-0.5 text-xs rounded-full transition`}>{val}</button></td>); })
+                            : options.map(([opt,color])=>{ const sel=resp[key]===opt; return (<td key={opt} className="border px-2 py-1 text-center"><button type="button" onClick={()=>handleOption(sec.id,it.id,opt)} className={`${sel?`bg-${color}-200 ring-2 ring-${color}-500`:`bg-${color}-100`} hover:bg-${color}-300 px-2 py-0.5 text-xs rounded-full transition`}>{opt.toUpperCase()}</button></td>); })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="mt-4"><label className="block text-sm">Upload Images</label><input type="file" accept="image/*" capture="environment" multiple onChange={e=>addImages(sec.id,e)} className="mt-1"/><div className="flex space-x-2 mt-2 overflow-x-auto">{(imgs[sec.id]||[]).map((s,i)=><img key={i} src={s} className="w-16 h-16 object-cover rounded-md border"/>)} </div></div>
+              </div>
+            </div>
           ))}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              type="button"
-              onClick={() => {setStoreName(''); setStoreId(''); setResponses({}); setImgs({}); localStorage.clear();}}
-              className="w-full sm:w-1/2 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg shadow"
-            >New Response</button>
-            <button
-              type="submit"
-              disabled={!allAnswered}
-              className={`w-full sm:w-1/2 ${allAnswered?'bg-green-500 hover:bg-green-600':'bg-gray-400 cursor-not-allowed'} text-white py-3 rounded-lg shadow`}
-            >Submit & Download PDF</button>
-          </div>
+          <div className="flex space-x-4"><button type="button" onClick={resetAll} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200">New Response</button><button type="submit" className="flex-1 bg-green-100 py-3 rounded-full hover:bg-green-200">Submit & Download PDF</button></div>
         </form>
       );
     }
-    ReactDOM.createRoot(document.getElementById('root')).render(<AuditForm/>);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   </script>
 </body>
 </html>
