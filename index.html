@@ -23,7 +23,17 @@
 
     const safeVibrate = pattern => { if(navigator?.vibrate) navigator.vibrate(pattern); };
     const safeLS = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, clear:()=>{try{localStorage.clear()}catch{}} };
-    const logEvent = (e,d={})=>{ fetch(LOG_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:e,timestamp:new Date().toISOString(),...d})}); };
+    const logEvent = (e, d = {}) => {
+        console.log(`Logging event: ${e}`, d);
+        fetch(LOG_ENDPOINT, {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: e, timestamp: new Date().toISOString(), ...d })
+        })
+        .then(() => console.log('Event logged successfully'))
+        .catch(err => console.error('Logging error:', err));
+      };
 
     const SECTIONS = [
       { id:'Training Materials', title:'Training Materials', items:[
