@@ -12,8 +12,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
 </head>
-<body class="bg-gray-100 p-6">
-  <div id="root" class="max-w-4xl mx-auto"></div>
+<body class="bg-gray-100">
+  <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect } = React;
     const params = new URLSearchParams(window.location.search);
@@ -142,7 +142,7 @@
             <div><label htmlFor="storeId" className="block text-sm">Store ID</label><input id="storeId" value={storeId} onChange={e=>setStoreId(e.target.value)} className="w-full p-2 border rounded"/></div>
           </div>
           {SECTIONS.map(sec=>(
-            <div key={sec.id} className="mb-6 bg-white rounded-lg shadow" id={`${sec.id}-section`}>
+            <div key={sec.id} className="mb-6" id={`${sec.id}-section`}>
               <div className="px-4 py-2 border-b"><h2 className="text-lg font-semibold">{sec.title}</h2></div>
               <div className="p-4 overflow-x-auto">
                 <table className="min-w-full border-collapse">
