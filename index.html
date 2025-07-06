@@ -12,14 +12,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
 </head>
-<body class="bg-gray-100">
-  <div id="root"></div>
+<body class="bg-gray-100 p-4">
+  <div id="root" className="p-4"></div>
   <script type="text/babel">
     const { useState, useEffect } = React;
     const params = new URLSearchParams(window.location.search);
     const auditorName = params.get('auditorName')||params.get('name')||'';
     const auditorId   = params.get('auditorId')||params.get('id')||'';
-    const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzlorpE-XN1Fkxdf156d84gWmpWUluBO8mrJWkxelG2L0AEdry0BXS1NM08CCJ7ZNYZ/exec';
+    const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzBIduCNOoQjKjUJkUwsh8GDvyFmG0U0CXM4R004elPXf14DMcGHrPttEF1H8A2Z3jK/exec';
 
     const safeVibrate = pattern => { if(navigator?.vibrate) navigator.vibrate(pattern); };
     const safeLS = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, clear:()=>{try{localStorage.clear()}catch{}} };
