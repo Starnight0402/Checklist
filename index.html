@@ -121,14 +121,58 @@
       const addImages=(sec,e)=>{Array.from(e.target.files).forEach(f=>{EXIF.getData(f,function(){const r=new FileReader();r.onload=ev=>setImgs(p=>({...p,[sec]:[...(p[sec]||[]),ev.target.result]}));r.readAsDataURL(f);});});e.target.value=null;};
       const scrollTo=(id)=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});};
 
-      const handleSubmit=e=>{
+      const handleSubmit = e => {
         e.preventDefault();
-        // validate header
-        if(!storeName.trim()){safeVibrate(200);scrollTo('storeName');return;}
-        if(!storeId.trim()){safeVibrate(200);scrollTo('storeId');return;}
-        // validate questions
-        for(const sec of SECTIONS){for(const it of sec.items){const key=`${sec.id}_${it.id}`;if(resp[key]==null){safeVibrate(200);scrollTo(key);return;}}}
-        safeVibrate(100);
+        // Validate header
+        if (!storeName.trim()) {
+          safeVibrate([200]);
+          scrollTo('storeName');
+          return;
+        }
+        if (!storeId.trim()) {
+          safeVibrate([200]);
+          scrollTo('storeId');
+          return;
+        }
+        // Validate each question
+        for (const sec of SECTIONS) {
+          for (const it of sec.items) {
+            const key = `${sec.id}_${it.id}`;
+            if (resp[key] == null) {
+              safeVibrate([200]);
+              scrollTo(key);
+              return;
+            }
+          }
+        }
+        // Submit logging
+        logEvent('submit', { auditorName, auditorId, storeName, storeId, resp });
+        safeVibrate([100]);
+        // Generate PDF report
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape' });
+        doc.setFontSize(16);
+        doc.text('Training Audit | Third wave coffee', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+        doc.setFontSize(12);
+        doc.text(`Store: ${storeName} (ID: ${storeId})`, doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+        // Build table data
+        const rows = [];
+        SECTIONS.forEach(sec => {
+          sec.items.forEach(it => {
+            const key = `${sec.id}_${it.id}`;
+            const r = resp[key];
+            const respText = r === 'yes' ? 'Yes' : r === 'no' ? 'No' : r === 'na' ? 'NA' : r;
+            rows.push([sec.title, it.q, it.w, respText]);
+          });
+        });
+        doc.autoTable({
+          head: [['Section', 'Question', 'Weight', 'Response']],
+          body: rows,
+          startY: 35,
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [220, 220, 220] }
+        });
+        doc.save(`audit_${storeName}_${Date.now()}.pdf`);
       };
       const resetAll=()=>{safeLS.clear();setResp({});setStoreName('');setStoreId('');setImgs({});safeVibrate([200]);};
 
