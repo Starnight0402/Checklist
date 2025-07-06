@@ -19,27 +19,13 @@
 <body class="bg-gray-100">
   <div id="root"></div>
   <script type="text/babel">
-    // --- URL PARAMS ---
+    const { useState, useEffect } = React;
     const params = new URLSearchParams(window.location.search);
-    const auditorName = params.get('name') || '';
-    const auditorId = params.get('id') || '';
+    const auditorName = decodeURIComponent(params.get('auditorName')||params.get('name')||'');
+    const auditorId   = decodeURIComponent(params.get('auditorId')||params.get('id')||'');
+    const safeVibrate = pattern => { if(navigator?.vibrate) navigator.vibrate(pattern); };
+    const safeLS = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, clear:()=>{try{localStorage.clear()}catch{}} };
 
-    // --- LOGIC CONSTANTS ---
-    const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwOONQnORegqIpR526ppKKeI-Urpxj76dtUNIwdaEfeq9vh9td2352xz9qg9h0BIzvf/exec';
-    const safeVibrate = pattern => { if (navigator?.vibrate) navigator.vibrate(pattern); };
-    const safeLS = { 
-      get: k => { try { return localStorage.getItem(k) } catch { return null } },
-      set: (k, v) => { try { localStorage.setItem(k, v) } catch {} },
-      clear: () => { try { localStorage.clear() } catch {} }
-    };
-    const logEvent = (e,d={}) => {
-      try { 
-        const data = encodeURIComponent(JSON.stringify({event: e, timestamp: new Date().toISOString(), ...d}));
-        new Image().src = `${LOG_ENDPOINT}?data=${data}`; 
-      } catch {}
-    };
-
-    // --- CHECKLIST SECTIONS ---
     const SECTIONS = [
       { id:'TrainingMaterials', title:'Training Materials', items:[
         {id:'TM_1',q:'FRM available at store?',w:1},
@@ -55,7 +41,7 @@
       { id:'LMS', title:'LMS Usage', items:[
         {id:'LMS_1',q:'Orientation & Induction completed within 3 days of joining?',w:4, wneg:-4},
         {id:'LMS_2',q:'All assessments & knowledge checks on LMS?',w:4, wneg:-4},
-        {id:'LMS_3',q:'Team uses LMS for new information & comms?',w:2}
+        {id:'LMS_3',q:'Team uses LMS for new info & comms?',w:2}
       ]},
       { id:'Buddy', title:'Buddy Trainer Availability & Capability', items:[
         {id:'Buddy_1',q:'Does the café have at least 2 certified Buddy Trainers?',w:2},
@@ -108,202 +94,161 @@
     const optionColors = { yes:'green', no:'red', na:'yellow' };
     const options = Object.entries(optionColors);
 
-    function App() {
-      const [resp, setResp] = React.useState(() => JSON.parse(localStorage.getItem('resp') || '{}'));
-      const [storeName, setStoreName] = React.useState(localStorage.getItem('storeName') || '');
-      const [storeId, setStoreId] = React.useState(localStorage.getItem('storeId') || '');
-      const [imgs, setImgs] = React.useState(() => JSON.parse(localStorage.getItem('imgs') || '{}'));
+    function App(){
+      const [resp,setResp]=useState(()=>JSON.parse(safeLS.get('resp')||'{}'));
+      const [storeName,setStoreName]=useState(safeLS.get('storeName')||'');
+      const [storeId,setStoreId]=useState(safeLS.get('storeId')||'');
+      const [imgs,setImgs]=useState(()=>JSON.parse(safeLS.get('imgs')||'{}'));
 
-      // Haptics
-      const zap = (n) => safeVibrate(Array(n).fill([80,80]).flat());
-      const buzz = (n) => safeVibrate(Array(n).fill(120).flat());
+      useEffect(()=>{
+        safeLS.set('auditorName', auditorName);
+        safeLS.set('auditorId', auditorId);
+      }, [auditorName, auditorId]);
 
-      React.useEffect(() => {
-        const save = () => {
-          localStorage.setItem('resp', JSON.stringify(resp));
-          localStorage.setItem('storeName', storeName);
-          localStorage.setItem('storeId', storeId);
-          localStorage.setItem('imgs', JSON.stringify(imgs));
-        };
-        window.addEventListener('beforeunload', save);
-        return () => window.removeEventListener('beforeunload', save);
-      }, [resp, storeName, storeId, imgs]);
+      useEffect(()=>{
+        const save=()=>{safeLS.set('resp',JSON.stringify(resp));safeLS.set('storeName',storeName);safeLS.set('storeId',storeId);safeLS.set('imgs',JSON.stringify(imgs));};
+        window.addEventListener('beforeunload',save);
+        return()=>window.removeEventListener('beforeunload',save);
+      },[resp,storeName,storeId,imgs]);
 
-      // All questions answered
-      const allDone = storeName.trim() && storeId.trim() && SECTIONS.every(sec =>
-        sec.items.every(it => resp[sec.id + '_' + it.id] != null)
-      );
-
-      const handleOption = (sec, it, val) => {
-        setResp(p => ({ ...p, [sec.id + '_' + it.id]: val }));
-        if(val === 'yes') safeVibrate(50);
-        else if(val === 'no') zap(2);
+      const handleOption=(sec,it,opt)=>{
+        const key=`${sec.id}_${it.id}`;
+        setResp(prev=>({...prev,[key]:opt}));
+        if(opt==='yes') safeVibrate(50);
+        else if(opt==='no') safeVibrate([50,50]);
       };
-      const handleTSA = (sec, it, val) => setResp(p => ({ ...p, [sec.id + '_' + it.id]: val }));
-
-      const addImages = (sec, e) => {
-        Array.from(e.target.files).forEach(f => {
-          EXIF.getData(f, function() {
-            const r = new FileReader();
-            r.onload = ev => setImgs(p => ({ ...p, [sec.id]: [...(p[sec.id] || []), ev.target.result] }));
+      const handleTSA=(sec,it,val)=>{
+        const key=`${sec.id}_${it.id}`;
+        setResp(prev=>({...prev,[key]:val}));
+        // no haptic for TSA
+      };
+      const addImages=(sec,e)=>{
+        Array.from(e.target.files).forEach(f=>{
+          EXIF.getData(f,function(){
+            const r=new FileReader();
+            r.onload=ev=>setImgs(p=>({...p,[sec.id]:[...(p[sec.id]||[]),ev.target.result]}));
             r.readAsDataURL(f);
           });
-        });
-        e.target.value = null;
+        }); e.target.value=null;
+      };
+      const scrollTo=(id)=>{
+        const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
       };
 
-      const handleNewResponse = () => {
-        localStorage.clear();
+      const allDone = storeName.trim() && storeId.trim() &&
+        SECTIONS.every(sec=>sec.items.every(it=>resp[`${sec.id}_${it.id}`]!=null));
+
+      const handleNewResponse = ()=>{
+        safeLS.clear();
         setResp({});
         setStoreName('');
         setStoreId('');
         setImgs({});
-        buzz(2);
-      };
-
-      const scrollTo = id => {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        safeVibrate([200,200]);
       };
 
       const handleSubmit = e => {
         e.preventDefault();
-        if (!allDone) { zap(2); return; }
-        // Compute score (negative, omit NA)
-        let total = 0, max = 0, yes=0, no=0, na=0;
-        let sectionScores = {};
-        SECTIONS.forEach(sec => {
-          let sectionTotal = 0, sectionMax = 0;
-          sec.items.forEach(it => {
-            const key = sec.id + '_' + it.id;
-            const r = resp[key];
-            if(sec.id==='TSA'){
-              const v = parseInt(r)||0;
-              sectionTotal += v; total += v; sectionMax += it.w; max += it.w;
-              if(v === 10) yes++; else if(v === 0) no++; else na++;
-            }
-            else{
-              if(r==='yes'){ sectionTotal += it.w; total += it.w; yes++; }
-              else if(r==='no' && it.wneg){ sectionTotal += it.wneg; total += it.wneg; no++; }
-              else if(r==='no'){ no++; }
-              else if(r==='na'){ na++; }
-              if(r!=='na'){ sectionMax += Math.abs(it.w); max += Math.abs(it.w); }
-            }
-          });
-          sectionScores[sec.title] = { total: sectionTotal, max: sectionMax };
-        });
-        const pct = max ? Math.round((total / max) * 100) : 0;
+        if (!storeName.trim()){ safeVibrate([200,200]); scrollTo('storeName'); return;}
+        if (!storeId.trim()){ safeVibrate([200,200]); scrollTo('storeId'); return;}
+        for(const sec of SECTIONS) for(const it of sec.items) {
+          if(resp[`${sec.id}_${it.id}`]==null){ safeVibrate([200,200]); scrollTo(`${sec.id}_${it.id}`); return;}
+        }
+        // Calculate score
+        let total=0, max=0;
+        SECTIONS.forEach(sec => sec.items.forEach(it => {
+          const key=sec.id+'_'+it.id, r=resp[key];
+          if(sec.id==='TSA'){const v=parseInt(r)||0; total+=v; max+=it.w;}
+          else{
+            if(r==='yes') total+=it.w;
+            else if(r==='no' && it.wneg) total+=it.wneg;
+            if(r!=='na') max+=Math.abs(it.w);
+          }
+        }));
+        const pct = max?Math.round((total/max)*100):0;
 
-        // Pie chart: Yes/No/NA
-        const drawPie = (ctx, data, colors, center, radius) => {
-          let totalV = data.reduce((a,b) => a+b,0);
-          let start = 0;
-          data.forEach((val, i) => {
-            const end = start + (val/totalV)*2*Math.PI;
-            ctx.beginPath();
-            ctx.moveTo(...center);
-            ctx.arc(center[0], center[1], radius, start, end);
-            ctx.closePath();
-            ctx.fillStyle = colors[i];
-            ctx.fill();
-            start = end;
-          });
-        };
-
-        // Pie chart: Section Scores
-        const sectionTitles = Object.keys(sectionScores);
-        const sectionVals = Object.values(sectionScores).map(s=>Math.max(s.total,0));
-        const sectionColors = [
-          '#A3CEF1','#B6E2D3','#F6D6AD','#D8C7FF','#B6D9F2','#F6A3A3','#E4D1B9','#F8B7D4'
-        ];
-        // PDF
+        // Generate PDF report
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
-        // Draw pies in a canvas, then to image
-        const pieCanvas = document.createElement('canvas');
-        pieCanvas.width = 500; pieCanvas.height = 160;
-        const ctx = pieCanvas.getContext('2d');
-        // Pie 1: Yes/No/NA
-        drawPie(ctx, [yes,no,na], ['#94d82d','#ff758f','#ffe066'], [80,80], 60);
-        ctx.font = 'bold 14px sans-serif';
-        ctx.fillStyle = '#222'; ctx.fillText('Yes',30,150); ctx.fillText('No',95,150); ctx.fillText('NA',160,150);
-        // Pie 2: Section Scores
-        let xOff = 300, pieR = 60;
-        drawPie(ctx, sectionVals, sectionColors, [xOff,80], pieR);
-        ctx.font = 'bold 12px sans-serif';
-        sectionTitles.forEach((t,i)=>{
-          ctx.fillStyle = sectionColors[i];
-          ctx.fillRect(xOff+80,30+i*20,15,15);
-          ctx.fillStyle = '#222';
-          ctx.fillText(t, xOff+100, 43+i*20);
-        });
+        const doc = new jsPDF({orientation:'portrait'});
+        // Title, credentials, score
+        doc.setFontSize(20);
+        doc.text('Training Audit | Third wave coffee', 105, 20, {align:'center'});
+        doc.setFontSize(12);
+        doc.text(`Date: ${new Date().toLocaleString()}`, 105, 28, {align:'center'});
+        doc.text(`Auditor: ${auditorName} (ID: ${auditorId})`, 20, 36);
+        doc.text(`Store: ${storeName} (ID: ${storeId})`, 20, 43);
+        doc.setFontSize(16);
+        doc.text(`Score: ${total} / ${max} (${pct}%)`, 105, 55, {align:'center'});
 
-        // Report header
-        doc.setFontSize(18); doc.setFont('helvetica','bold');
-        doc.text('Training Audit | Third wave coffee', 297, 45, {align:'center'});
-        doc.setFontSize(12); doc.setFont('helvetica','normal');
-        doc.text(`Date: ${new Date().toLocaleString()}`, 35, 70);
-        doc.text(`Auditor: ${auditorName} (${auditorId})`, 35, 85);
-        doc.text(`Store: ${storeName} (${storeId})`, 35, 100);
-        doc.setFontSize(18); doc.setTextColor(30,30,30);
-        doc.text(`Score: ${total} / ${max}  (${pct}%)`, 430, 75, {align:'center'});
-        // Insert pies
-        doc.addImage(pieCanvas.toDataURL('image/png'),'PNG', 297, 85, 250, 120);
-
-        // Section tables, colored boxes
-        let y = 230;
-        SECTIONS.forEach((sec, i) => {
-          if(y>700) { doc.addPage(); y=40; }
-          // Pastel box
-          doc.setFillColor(...hexToRgb(sectionColors[i%sectionColors.length]), 0.15);
-          doc.roundedRect(30, y-10, 540, 50 + sec.items.length*22 + 40, 10, 10, 'F');
-          doc.setTextColor(30,30,30);
-          doc.setFont('helvetica','bold'); doc.setFontSize(15);
-          doc.text(sec.title, 300, y+8, {align:'center', baseline:'middle'});
-          doc.setFont('helvetica','normal'); doc.setFontSize(12);
-          doc.text(`Section Score: ${sectionScores[sec.title].total} / ${sectionScores[sec.title].max}`, 500, y+8, {align:'right'});
-          // Table
-          let tableRows = sec.items.map(it => {
-            const key = sec.id + '_' + it.id;
+        let y = 65;
+        SECTIONS.forEach(sec => {
+          // Calculate section score
+          let secTotal=0, secMax=0;
+          sec.items.forEach(it => {
+            const key = `${sec.id}_${it.id}`;
             const r = resp[key];
-            const respText = sec.id === 'TSA' ? (r||'') : (r === 'yes' ? 'Yes' : r === 'no' ? 'No' : r === 'na' ? 'NA' : r);
-            const score = sec.id === 'TSA' ? (parseInt(r)||0) : (r==='yes'?it.w:r==='no'&&it.wneg?it.wneg:0);
-            return [it.q, respText, score.toString()];
+            if(sec.id==='TSA'){const v=parseInt(r)||0; secTotal+=v; secMax+=it.w;}
+            else{
+              if(r==='yes') secTotal+=it.w;
+              else if(r==='no' && it.wneg) secTotal+=it.wneg;
+              if(r!=='na') secMax+=Math.abs(it.w);
+            }
+          });
+
+          // Box for section
+          const boxX = 10, boxW = 190;
+          let startY = y;
+          doc.setDrawColor(100,100,100);
+          doc.setFillColor(242,242,255);
+          doc.rect(boxX, y, boxW, 10, 'F');
+          doc.setFontSize(13); doc.setFont('helvetica','bold');
+          doc.setTextColor(40,40,40);
+          doc.text(`${sec.title}   (${secTotal} / ${secMax})`, boxX+boxW/2, y+7, {align:'center', baseline:'middle'});
+          y += 14;
+          doc.setTextColor(33,33,33);
+          doc.setFont('helvetica','normal');
+
+          // Section table
+          const rows = sec.items.map(it=>{
+            const key = `${sec.id}_${it.id}`;
+            const r = resp[key];
+            const score = sec.id==='TSA'?parseInt(r)||0:(r==='yes'?it.w:(r==='no'&&it.wneg?it.wneg:0));
+            return [it.q, (r==='yes'||r==='no'||r==='na'?r:r), score.toString()];
           });
           doc.autoTable({
-            startY: y+20,
-            margin: { left: 40, right: 40 },
-            head: [['Question','Response','Score']],
-            body: tableRows,
-            styles: { fontSize: 10, textColor: [20,20,20], lineColor: [120,120,120] },
-            headStyles: { fillColor: [30,30,30], textColor: [255,255,255], fontStyle:'bold', fontSize:11 },
-            tableWidth: 500,
+            startY: y,
+            margin: {left: boxX},
+            tableWidth: boxW,
+            head: [['Question','Resp','Score']],
+            body: rows,
             theme: 'grid',
+            headStyles: {fillColor:[210,210,230], textColor:30, fontStyle:'bold', fontSize:10},
+            styles: {fontSize:9, textColor:40, halign:'left', cellPadding:2, font:'helvetica'},
+            didDrawPage: (data) => {}
           });
-          y = doc.lastAutoTable.finalY + 30;
-          // Section images
-          if(imgs[sec.id]) {
-            imgs[sec.id].forEach((src,i2)=>{
-              if(y>700) { doc.addPage(); y=40; }
-              doc.addImage(src, 'JPEG', 420, y, 70, 70);
-              y += 75;
-            });
-          }
+          y = doc.lastAutoTable.finalY+8;
+
+          // Images for section
+          (imgs[sec.id]||[]).forEach(src=>{
+            if(y>260){doc.addPage(); y=20;}
+            doc.addImage(src, 'JPEG', boxX, y, 28, 28);
+            y += 32;
+          });
+
+          // Section box border (after table & images)
+          let endY = y;
+          doc.setDrawColor(100,100,120);
+          doc.rect(boxX, startY, boxW, endY-startY);
+
+          y += 8;
+          if(y>260){doc.addPage(); y=20;}
         });
+
         doc.save(`audit_${storeName}_${Date.now()}.pdf`);
-        buzz(1);
+        safeVibrate(100);
       };
 
-      function hexToRgb(hex, alpha) {
-        const h = hex.replace('#','');
-        const r = parseInt(h.substring(0,2),16);
-        const g = parseInt(h.substring(2,4),16);
-        const b = parseInt(h.substring(4,6),16);
-        return [r,g,b, alpha];
-      }
-
-      // UI
-      return (
+      return(
         <form onSubmit={handleSubmit} className="space-y-6 p-4 sm:p-8 bg-white rounded-lg shadow fade-in">
           <h1 className="text-2xl font-bold text-center mb-2">Training Audit | Third wave coffee</h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -349,7 +294,7 @@
                                 <td key={val} className="border px-2 py-1 text-center">
                                   <button
                                     type="button"
-                                    onClick={()=>handleTSA(sec,it.id,String(val))}
+                                    onClick={()=>handleTSA(sec,it,String(val))}
                                     className={`${sel?'bg-blue-200 ring-2 ring-blue-500':'bg-gray-200'} hover:bg-blue-300 px-2 py-0.5 text-xs rounded-full transition`}
                                   >{val}</button>
                                 </td>
@@ -383,7 +328,7 @@
           ))}
           <div className="flex space-x-4 fade-in">
             <button type="button" onClick={handleNewResponse} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200 transition">New Response</button>
-            <button type="submit" disabled={!allDone} className={`flex-1 py-3 rounded-full transition ${allDone?'bg-green-100 hover:bg-green-200':'bg-gray-200 cursor-not-allowed'}`}>Submit & Download PDF</button>
+            <button type="submit" className="flex-1 bg-green-100 py-3 rounded-full hover:bg-green-200 transition" disabled={!allDone}>Submit & Download PDF</button>
           </div>
         </form>
       );
