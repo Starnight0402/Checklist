@@ -90,6 +90,8 @@
       ]}
     ];
 
+    const vibrate = pattern => { if (navigator.vibrate) navigator.vibrate(pattern); };
+
     function App() {
       const [resp, setResp] = useState(() => JSON.parse(localStorage.getItem('resp') || '{}'));
       const [storeName, setStoreName] = useState(localStorage.getItem('storeName') || '');
@@ -107,12 +109,20 @@
         return () => window.removeEventListener('beforeunload', save);
       }, [resp, storeName, storeId, imgs]);
 
-      const handleOption = (sec, it, val) => setResp(r => ({ ...r, [sec + '_' + it]: val }));
+      const handleOption = (sec, it, val) => {
+        if (val === 'yes') vibrate(75);
+        else if (val === 'no') vibrate([75,50,75]);
+        setResp(r => ({ ...r, [sec + '_' + it]: val }));
+      };
       const allDone = SECTIONS.every(sec => sec.items.every(it => resp[sec.id + '_' + it.id] != null));
 
       const handleSubmit = e => {
         e.preventDefault();
-        if (!storeName.trim() || !storeId.trim() || !allDone) return;
+        if (!storeName.trim() || !storeId.trim() || !allDone) {
+          vibrate([200,100,200]);
+          return;
+        }
+        vibrate(150);
         let total=0, max=0;
         SECTIONS.forEach(sec => sec.items.forEach(it => { const key=sec.id+'_'+it.id, r=resp[key]; if(sec.id==='TSA'){const v=parseInt(r)||0; total+=v; max+=it.w;}else{if(r==='yes') total+=it.w; if(r!=='na') max+=it.w;} }));
         const pct = max?Math.round(total/max*100):0;
@@ -231,7 +241,7 @@
             </section>
           ))}
           <div className="flex gap-4">
-            <button type="button" onClick={()=>{localStorage.clear();setResp({});setStoreName('');setStoreId('');setImgs({});}} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200">New Response</button>
+            <button type="button" onClick={()=>{vibrate(75);localStorage.clear();setResp({});setStoreName('');setStoreId('');setImgs({});}} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200">New Response</button>
             <button type="submit" disabled={!allDone} className="flex-1 bg-green-100 py-3 rounded-full hover:bg-green-200">Submit & Download PDF</button>
           </div>
         </form>
