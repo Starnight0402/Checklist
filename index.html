@@ -12,20 +12,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
   <style>
-    .fade-in { opacity: 0; animation: fadeIn 0.6s forwards; }
-    @keyframes fadeIn { to { opacity: 1; } }
+    body { background: #f7fafc; }
+    .report-section-box { border-radius: 18px; background: #f7f8fc; box-shadow: 0 1px 7px 0 rgba(0,0,0,0.04); border: 1.5px solid #e7eaf1; margin-bottom: 18px; }
+    .pdf-section { borderRadius: 14, fillColor: [245,247,252], lineWidth: 0.8, lineColor: [195,205,222] }
+    .pdf-header { fontSize: 18, fontStyle: 'bold', textColor: [45,55,72] }
   </style>
 </head>
-<body class="bg-gray-100">
+<body>
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect } = React;
+    // --- URL PARAM PULL ---
     const params = new URLSearchParams(window.location.search);
-    const auditorName = decodeURIComponent(params.get('auditorName')||params.get('name')||'');
-    const auditorId   = decodeURIComponent(params.get('auditorId')||params.get('id')||'');
-    const safeVibrate = pattern => { if(navigator?.vibrate) navigator.vibrate(pattern); };
-    const safeLS = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, clear:()=>{try{localStorage.clear()}catch{}} };
-
+    const auditorName = params.get('name')||'';
+    const auditorId   = params.get('id')||'';
+    // --- SECTION DEFINITION ---
     const SECTIONS = [
       { id:'TrainingMaterials', title:'Training Materials', items:[
         {id:'TM_1',q:'FRM available at store?',w:1},
@@ -35,7 +36,7 @@
         {id:'TM_5',q:'Dial-in One-pager visible?',w:2},
         {id:'TM_6',q:'New-launch learning material posted?',w:1},
         {id:'TM_7',q:'COFFEE & HD Playbook in store?',w:1},
-        {id:'TM_8',q:'MSDS, chemical chart and Shelf life chart available?',w:1},
+        {id:'TM_8',q:'MSDS & Shelf life chart displayed?',w:1},
         {id:'TM_9',q:'Career Progression Chart & Reward Poster displayed?',w:1}
       ]},
       { id:'LMS', title:'LMS Usage', items:[
@@ -44,46 +45,46 @@
         {id:'LMS_3',q:'Team uses LMS for new info & comms?',w:2}
       ]},
       { id:'Buddy', title:'Buddy Trainer Availability & Capability', items:[
-        {id:'Buddy_1',q:'Does the café have at least 2 certified Buddy Trainers?',w:2},
-        {id:'Buddy_2',q:'Have Buddy Trainers completed their Skill Check?',w:2},
-        {id:'Buddy_3',q:'Are trainees rostered with Buddy Trainers and working in the same shift?',w:1},
-        {id:'Buddy_4',q:'Have Buddy Trainers attended the BT workshop?',w:2},
-        {id:'Buddy_5',q:'Can Buddy Trainers explain the 4-step training process effectively?',w:2},
-        {id:'Buddy_6',q:'Can Buddy Trainers navigate Zing LMS flawlessly?',w:1}
+        {id:'Buddy_1',q:'≥2 certified Buddy Trainers?',w:2},
+        {id:'Buddy_2',q:'Buddy Trainers passed skill checks?',w:2},
+        {id:'Buddy_3',q:'Trainees rostered with Buddies?',w:1},
+        {id:'Buddy_4',q:'Buddy Trainers attended workshop?',w:2},
+        {id:'Buddy_5',q:'Explain 4-step training process?',w:2},
+        {id:'Buddy_6',q:'Navigate LMS flawlessly?',w:1}
       ]},
       { id:'NewJoiner', title:'New Joiner Training & Records', items:[
-        {id:'NJ_1',q:'Is the OJT book available for all partners?',w:1},
-        {id:'NJ_2',q:'Are trainees referring to the OJT book and completing their skill checks?',w:1},
-        {id:'NJ_3',q:'Is training progression aligned with the Training Calendar/Plan?',w:1},
-        {id:'NJ_4',q:'Are team members aware of post-barista training progressions?',w:1},
-        {id:'NJ_5',q:'Have managers completed SHLP training as per the calendar?',w:2},
-        {id:'NJ_6',q:'Are there at least 2 FOSTAC-certified managers in the store?',w:2},
-        {id:'NJ_7',q:'Is ASM/SM training completed as per the Training Calendar?',w:2}
+        {id:'NJ_1',q:'OJT book available for all partners?',w:1},
+        {id:'NJ_2',q:'Trainees completing skill checks?',w:1},
+        {id:'NJ_3',q:'Training aligned with plan?',w:1},
+        {id:'NJ_4',q:'Aware of progressions?',w:1},
+        {id:'NJ_5',q:'Managers completed SHLP training?',w:2},
+        {id:'NJ_6',q:'≥2 FOSTAC-certified managers?',w:2},
+        {id:'NJ_7',q:'ASM/SM training completed?',w:2}
       ]},
       { id:'PartnerKnowledge', title:'Partner Knowledge', items:[
-        {id:'PK_1',q:'Are team members aware of current company communications?',w:2},
-        {id:'PK_2',q:'Ask a team member to conduct a Coffee Tasting & Sampling',w:2},
-        {id:'PK_3',q:'Is Sampling being conducted as per the set guidelines?',w:2},
-        {id:'PK_4',q:'Is Coffee Tasting engaging and effective?',w:2},
-        {id:'PK_5',q:'Are team members aware of manual brewing methods and standards?',w:2},
-        {id:'PK_6',q:'Are partners following grooming standards?',w:2},
+        {id:'PK_1',q:'Aware of company communications?',w:2},
+        {id:'PK_2',q:'Conduct Coffee Tasting & Sampling?',w:2},
+        {id:'PK_3',q:'Sampling per guidelines?',w:2},
+        {id:'PK_4',q:'Tasting engaging?',w:2},
+        {id:'PK_5',q:'Aware of manual brew standards?',w:2},
+        {id:'PK_6',q:'Partners follow grooming standards?',w:2},
         {id:'PK_7',q:'Pop-quiz key topics passed?',w:3, wneg:-3}
       ]},
       { id:'TSA', title:'TSA - Training Skill Assessment', items:[
-        {id:'TSA_1',q:'Partner 1 – Hot & Cold stations work?',w:10},
-        {id:'TSA_2',q:'Partner 2 – Food station cleanliness?',w:10},
-        {id:'TSA_3',q:'Partner 3 – Customer Service quality?',w:10}
+        {id:'TSA_1',q:'Hot & Cold stations work?',w:10},
+        {id:'TSA_2',q:'Food station cleanliness?',w:10},
+        {id:'TSA_3',q:'Customer Service quality?',w:10}
       ]},
       { id:'CustomerExperience', title:'Customer Experience', items:[
-        {id:'CX_1',q:'Is background music at appropriate volume?',w:1},
-        {id:'CX_2',q:'Is store temperature comfortable?',w:1},
-        {id:'CX_3',q:'Are washrooms clean and well-maintained?',w:1},
-        {id:'CX_4',q:'Is Wi-Fi available & functioning?',w:1},
-        {id:'CX_5',q:'Are marketing & VM displays correct?',w:2},
-        {id:'CX_6',q:'Is store furniture clean & well-kept?',w:1},
-        {id:'CX_7',q:'What do you understand by MA, CPI, QA scores?',w:1},
-        {id:'CX_8',q:'What was the latest Mystery Audit score for the store?',w:1},
-        {id:'CX_9',q:'Top 2 CX opportunity areas last month?',w:1}
+        {id:'CX_1',q:'Music at proper volume?',w:1},
+        {id:'CX_2',q:'Temperature comfortable?',w:1},
+        {id:'CX_3',q:'Washrooms clean?',w:1},
+        {id:'CX_4',q:'Wi-Fi working?',w:1},
+        {id:'CX_5',q:'VM displays correct?',w:2},
+        {id:'CX_6',q:'Furniture well-kept?',w:1},
+        {id:'CX_7',q:'Understanding MA/CPI/QA?',w:1},
+        {id:'CX_8',q:'Latest Mystery Audit score?',w:1},
+        {id:'CX_9',q:'Top 2 CX opps last month?',w:1}
       ]},
       { id:'ActionPlan', title:'Action Plan & Continuous Improvement', items:[
         {id:'AP_1',q:'Concerns addressed within 48hrs?',w:1, wneg:-1},
@@ -91,174 +92,135 @@
         {id:'AP_3',q:'Managers aware of action plan?',w:2}
       ]}
     ];
+    // Button and scoring config
     const optionColors = { yes:'green', no:'red', na:'yellow' };
     const options = Object.entries(optionColors);
 
+    // --- COMPONENT ---
     function App(){
-      const [resp,setResp]=useState(()=>JSON.parse(safeLS.get('resp')||'{}'));
-      const [storeName,setStoreName]=useState(safeLS.get('storeName')||'');
-      const [storeId,setStoreId]=useState(safeLS.get('storeId')||'');
-      const [imgs,setImgs]=useState(()=>JSON.parse(safeLS.get('imgs')||'{}'));
-
-      useEffect(()=>{
-        safeLS.set('auditorName', auditorName);
-        safeLS.set('auditorId', auditorId);
-      }, [auditorName, auditorId]);
-
-      useEffect(()=>{
-        const save=()=>{safeLS.set('resp',JSON.stringify(resp));safeLS.set('storeName',storeName);safeLS.set('storeId',storeId);safeLS.set('imgs',JSON.stringify(imgs));};
-        window.addEventListener('beforeunload',save);
-        return()=>window.removeEventListener('beforeunload',save);
-      },[resp,storeName,storeId,imgs]);
-
-      const handleOption=(sec,it,opt)=>{
-        const key=`${sec.id}_${it.id}`;
-        setResp(prev=>({...prev,[key]:opt}));
-        if(opt==='yes') safeVibrate(50);
-        else if(opt==='no') safeVibrate([50,50]);
+      const [resp,setResp]=useState({});
+      const [storeName,setStoreName]=useState('');
+      const [storeId,setStoreId]=useState('');
+      const [imgs,setImgs]=useState({});
+      // For mobile: always scroll to missing field on submit
+      const scrollTo=(id)=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});};
+      // Haptics
+      const safeVibrate=pat=>{try{if(navigator?.vibrate)vibrate(pat);}catch{}};
+      const vibrate=pat=>navigator.vibrate(pat);
+      // Option change handlers
+      const handleOption=(sec,it,val)=>{
+        const key=sec.id+'_'+it.id; setResp(p=>({...p,[key]:val}));
+        if(val==='yes')safeVibrate(50); else if(val==='no')safeVibrate([50,100]); // yes: zap, no: double zap
       };
       const handleTSA=(sec,it,val)=>{
-        const key=`${sec.id}_${it.id}`;
-        setResp(prev=>({...prev,[key]:val}));
-        // no haptic for TSA
+        const key=sec.id+'_'+it.id; setResp(p=>({...p,[key]:val}));
       };
-      const addImages=(sec,e)=>{
-        Array.from(e.target.files).forEach(f=>{
-          EXIF.getData(f,function(){
-            const r=new FileReader();
-            r.onload=ev=>setImgs(p=>({...p,[sec.id]:[...(p[sec.id]||[]),ev.target.result]}));
-            r.readAsDataURL(f);
-          });
-        }); e.target.value=null;
+      // Image upload
+      const addImages=(sec,e)=>{Array.from(e.target.files).forEach(f=>{
+        EXIF.getData(f,function(){
+          const r=new FileReader();
+          r.onload=ev=>setImgs(p=>({...p,[sec.id]:[...(p[sec.id]||[]),ev.target.result]}));
+          r.readAsDataURL(f);
+        });});
+        e.target.value=null;
       };
-      const scrollTo=(id)=>{
-        const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
-      };
-
-      const allDone = storeName.trim() && storeId.trim() &&
-        SECTIONS.every(sec=>sec.items.every(it=>resp[`${sec.id}_${it.id}`]!=null));
-
-      const handleNewResponse = ()=>{
-        safeLS.clear();
-        setResp({});
-        setStoreName('');
-        setStoreId('');
-        setImgs({});
-        safeVibrate([200,200]);
-      };
-
-      const handleSubmit = e => {
+      // Submit + validation + PDF
+      const handleSubmit=e=>{
         e.preventDefault();
-        if (!storeName.trim()){ safeVibrate([200,200]); scrollTo('storeName'); return;}
-        if (!storeId.trim()){ safeVibrate([200,200]); scrollTo('storeId'); return;}
-        for(const sec of SECTIONS) for(const it of sec.items) {
-          if(resp[`${sec.id}_${it.id}`]==null){ safeVibrate([200,200]); scrollTo(`${sec.id}_${it.id}`); return;}
+        if(!storeName.trim()){safeVibrate([200,200]);scrollTo('storeName');return;}
+        if(!storeId.trim()){safeVibrate([200,200]);scrollTo('storeId');return;}
+        for(const sec of SECTIONS)for(const it of sec.items){
+          const key=sec.id+'_'+it.id;
+          if(resp[key]==null){safeVibrate([200,200]);scrollTo(key);return;}
         }
-        // Calculate score
+        // SCORING
         let total=0, max=0;
-        SECTIONS.forEach(sec => sec.items.forEach(it => {
+        SECTIONS.forEach(sec=>sec.items.forEach(it=>{
           const key=sec.id+'_'+it.id, r=resp[key];
           if(sec.id==='TSA'){const v=parseInt(r)||0; total+=v; max+=it.w;}
           else{
-            if(r==='yes') total+=it.w;
-            else if(r==='no' && it.wneg) total+=it.wneg;
-            if(r!=='na') max+=Math.abs(it.w);
+            if(r==='yes')total+=it.w;
+            else if(r==='no'&&it.wneg)total+=it.wneg;
+            if(r!=='na')max+=Math.abs(it.w);
           }
         }));
         const pct = max?Math.round((total/max)*100):0;
-
-        // Generate PDF report
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({orientation:'portrait'});
-        // Title, credentials, score
-        doc.setFontSize(20);
-        doc.text('Training Audit | Third wave coffee', 105, 20, {align:'center'});
-        doc.setFontSize(12);
-        doc.text(`Date: ${new Date().toLocaleString()}`, 105, 28, {align:'center'});
-        doc.text(`Auditor: ${auditorName} (ID: ${auditorId})`, 20, 36);
-        doc.text(`Store: ${storeName} (ID: ${storeId})`, 20, 43);
-        doc.setFontSize(16);
-        doc.text(`Score: ${total} / ${max} (${pct}%)`, 105, 55, {align:'center'});
-
-        let y = 65;
-        SECTIONS.forEach(sec => {
-          // Calculate section score
+        // PDF EXPORT --->
+        const {jsPDF}=window.jspdf;
+        const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+        // Title and credentials
+        doc.setFontSize(20);doc.setTextColor(41,53,72);
+        doc.text('Training Audit | Third wave coffee', 105, 18, {align:'center'});
+        doc.setFontSize(12);doc.setTextColor(41,53,72);
+        doc.text(`Auditor: ${auditorName||'-'} (ID: ${auditorId||'-'})`, 15, 28);
+        doc.text(`Store: ${storeName||'-'} (ID: ${storeId||'-'})`, 15, 35);
+        doc.setFontSize(13);doc.setTextColor(28,37,56);doc.text(`Overall Score: ${total}/${max}    Percentage: ${pct}%`, 15, 43);
+        let y = 48;
+        // --- Section rendering
+        SECTIONS.forEach(sec=>{
+          // --- Calculate section score
           let secTotal=0, secMax=0;
-          sec.items.forEach(it => {
-            const key = `${sec.id}_${it.id}`;
-            const r = resp[key];
+          sec.items.forEach(it=>{
+            const key=sec.id+'_'+it.id, r=resp[key];
             if(sec.id==='TSA'){const v=parseInt(r)||0; secTotal+=v; secMax+=it.w;}
-            else{
-              if(r==='yes') secTotal+=it.w;
-              else if(r==='no' && it.wneg) secTotal+=it.wneg;
-              if(r!=='na') secMax+=Math.abs(it.w);
-            }
+            else{if(r==='yes')secTotal+=it.w; else if(r==='no'&&it.wneg)secTotal+=it.wneg;if(r!=='na')secMax+=Math.abs(it.w);}
           });
-
-          // Box for section
-          const boxX = 10, boxW = 190;
-          let startY = y;
-          doc.setDrawColor(100,100,100);
-          doc.setFillColor(242,242,255);
-          doc.rect(boxX, y, boxW, 10, 'F');
-          doc.setFontSize(13); doc.setFont('helvetica','bold');
-          doc.setTextColor(40,40,40);
-          doc.text(`${sec.title}   (${secTotal} / ${secMax})`, boxX+boxW/2, y+7, {align:'center', baseline:'middle'});
-          y += 14;
-          doc.setTextColor(33,33,33);
-          doc.setFont('helvetica','normal');
-
-          // Section table
-          const rows = sec.items.map(it=>{
-            const key = `${sec.id}_${it.id}`;
-            const r = resp[key];
-            const score = sec.id==='TSA'?parseInt(r)||0:(r==='yes'?it.w:(r==='no'&&it.wneg?it.wneg:0));
-            return [it.q, (r==='yes'||r==='no'||r==='na'?r:r), score.toString()];
+          // --- Box layout vars
+          const boxX=12, boxW=186, innerPad=4;
+          let boxStartY=y, headingY=y+10;
+          // Draw box (soft color)
+          doc.setFillColor(245,247,252); // pastel lavender/blue
+          doc.setDrawColor(195,205,222);
+          doc.roundedRect(boxX, boxStartY, boxW, 10+6*sec.items.length+innerPad*2+8, 5, 5, 'F');
+          // Section heading
+          doc.setFontSize(13);doc.setTextColor(36,39,48);doc.setFont('helvetica','bold');
+          doc.text(`${sec.title}   (Section Score: ${secTotal}/${secMax})`, boxX+boxW/2, headingY, {align:'center'});
+          // Table header
+          doc.setFontSize(11); doc.setTextColor(60,63,74); doc.setFont('helvetica','normal');
+          const tableY=headingY+4;
+          doc.text('Question', boxX+5, tableY);
+          doc.text('Response', boxX+110, tableY);
+          doc.text('Score', boxX+162, tableY);
+          // Table rows
+          let rowY = tableY+6;
+          sec.items.forEach(it=>{
+            const key=sec.id+'_'+it.id, r=resp[key];
+            const displayResp = sec.id==='TSA' ? (r||'0') : (typeof r==='string'?r.toUpperCase():r);
+            const score = sec.id==='TSA' ? (parseInt(r)||0) : (r==='yes'?it.w:(r==='no'&&it.wneg?it.wneg:0));
+            doc.setFontSize(10); doc.setTextColor(50,50,50); doc.setFont('helvetica','normal');
+            doc.text(it.q, boxX+5, rowY, {maxWidth:100});
+            doc.text(String(displayResp), boxX+112, rowY);
+            doc.text(String(score), boxX+162, rowY);
+            rowY += 6;
           });
-          doc.autoTable({
-            startY: y,
-            margin: {left: boxX},
-            tableWidth: boxW,
-            head: [['Question','Resp','Score']],
-            body: rows,
-            theme: 'grid',
-            headStyles: {fillColor:[210,210,230], textColor:30, fontStyle:'bold', fontSize:10},
-            styles: {fontSize:9, textColor:40, halign:'left', cellPadding:2, font:'helvetica'},
-            didDrawPage: (data) => {}
-          });
-          y = doc.lastAutoTable.finalY+8;
-
           // Images for section
-          (imgs[sec.id]||[]).forEach(src=>{
-            if(y>260){doc.addPage(); y=20;}
-            doc.addImage(src, 'JPEG', boxX, y, 28, 28);
-            y += 32;
-          });
-
-          // Section box border (after table & images)
-          let endY = y;
-          doc.setDrawColor(100,100,120);
-          doc.rect(boxX, startY, boxW, endY-startY);
-
-          y += 8;
-          if(y>260){doc.addPage(); y=20;}
+          if((imgs[sec.id]||[]).length){
+            rowY += 2;
+            (imgs[sec.id]||[]).forEach((src,i)=>{
+              if(rowY > 275){doc.addPage(); rowY=20;}
+              doc.addImage(src, 'JPEG', boxX+8+38*i, rowY, 30, 30);
+            });
+            rowY += 34;
+          }
+          y = Math.max(rowY+innerPad, y+10+6*sec.items.length+innerPad*2+8);
+          // If next section box will overflow, go to next page
+          if(y+36>285){doc.addPage(); y=18;}
         });
-
-        doc.save(`audit_${storeName}_${Date.now()}.pdf`);
-        safeVibrate(100);
+        doc.save(`audit_${storeName||'audit'}_${Date.now()}.pdf`);
       };
 
-      return(
-        <form onSubmit={handleSubmit} className="space-y-6 p-4 sm:p-8 bg-white rounded-lg shadow fade-in">
-          <h1 className="text-2xl font-bold text-center mb-2">Training Audit | Third wave coffee</h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      // ---- Form rendering ----
+      return (
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto p-2">
+          <h1 className="text-2xl font-bold text-center mb-4">Training Audit | Third wave coffee</h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-5">
             <div>
               <label className="block text-sm">Auditor Name</label>
-              <input readOnly value={auditorName} className="w-full p-2 border rounded bg-gray-100"/>
+              <input id="auditorName" readOnly value={auditorName} className="w-full p-2 border rounded bg-gray-100"/>
             </div>
             <div>
               <label className="block text-sm">Auditor ID</label>
-              <input readOnly value={auditorId} className="w-full p-2 border rounded bg-gray-100"/>
+              <input id="auditorId" readOnly value={auditorId} className="w-full p-2 border rounded bg-gray-100"/>
             </div>
             <div>
               <label htmlFor="storeName" className="block text-sm">Store Name</label>
@@ -270,9 +232,9 @@
             </div>
           </div>
           {SECTIONS.map(sec=>(
-            <div key={sec.id} id={sec.id+'-section'} className="mb-6 fade-in">
-              <h2 className="text-lg font-semibold border-b pb-1">{sec.title}</h2>
-              <table className="w-full border-collapse mt-2">
+            <div key={sec.id} className="report-section-box p-3 mb-4">
+              <h2 className="text-lg font-semibold mb-2 text-center">{sec.title}</h2>
+              <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="border px-2 py-1 text-left">Question</th>
@@ -317,18 +279,18 @@
                   })}
                 </tbody>
               </table>
-              <div className="mt-4 fade-in">
-                <label className="block text-sm">Upload Images</label>
+              <div className="mt-2">
+                <label className="block text-xs font-medium mb-1">Upload Images</label>
                 <input type="file" accept="image/*" capture="environment" multiple onChange={e=>addImages(sec,e)} className="mt-1"/>
                 <div className="flex space-x-2 mt-2 overflow-x-auto">
-                  {(imgs[sec.id]||[]).map((s,i)=><img key={i} src={s} className="w-16 h-16 object-cover rounded-md border"/>) }
+                  {(imgs[sec.id]||[]).map((s,i)=><img key={i} src={s} className="w-12 h-12 object-cover rounded-md border"/>) }
                 </div>
               </div>
             </div>
           ))}
-          <div className="flex space-x-4 fade-in">
-            <button type="button" onClick={handleNewResponse} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200 transition">New Response</button>
-            <button type="submit" className="flex-1 bg-green-100 py-3 rounded-full hover:bg-green-200 transition" disabled={!allDone}>Submit & Download PDF</button>
+          <div className="flex space-x-4 mt-5">
+            <button type="button" onClick={()=>{setResp({});setStoreName('');setStoreId('');setImgs({});safeVibrate([120,120]);}} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200 transition">New Response</button>
+            <button type="submit" className="flex-1 bg-green-100 py-3 rounded-full hover:bg-green-200 transition">Submit & Download PDF</button>
           </div>
         </form>
       );
