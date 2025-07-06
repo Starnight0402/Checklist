@@ -19,13 +19,29 @@
 <body class="bg-gray-100">
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    // --- URL PARAMS ---
     const params = new URLSearchParams(window.location.search);
-    const auditorName = params.get('auditorName') || '';
-    const auditorId   = params.get('auditorId')   || '';
+    const auditorName = params.get('name') || '';
+    const auditorId = params.get('id') || '';
 
+    // --- LOGIC CONSTANTS ---
+    const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwOONQnORegqIpR526ppKKeI-Urpxj76dtUNIwdaEfeq9vh9td2352xz9qg9h0BIzvf/exec';
+    const safeVibrate = pattern => { if (navigator?.vibrate) navigator.vibrate(pattern); };
+    const safeLS = { 
+      get: k => { try { return localStorage.getItem(k) } catch { return null } },
+      set: (k, v) => { try { localStorage.setItem(k, v) } catch {} },
+      clear: () => { try { localStorage.clear() } catch {} }
+    };
+    const logEvent = (e,d={}) => {
+      try { 
+        const data = encodeURIComponent(JSON.stringify({event: e, timestamp: new Date().toISOString(), ...d}));
+        new Image().src = `${LOG_ENDPOINT}?data=${data}`; 
+      } catch {}
+    };
+
+    // --- CHECKLIST SECTIONS ---
     const SECTIONS = [
-      { id:'Training Materials', title:'Training Materials', items:[
+      { id:'TrainingMaterials', title:'Training Materials', items:[
         {id:'TM_1',q:'FRM available at store?',w:1},
         {id:'TM_2',q:'BRM available at store?',w:1},
         {id:'TM_3',q:'One-pager – Hot/Cue Cards displayed?',w:1},
@@ -33,72 +49,76 @@
         {id:'TM_5',q:'Dial-in One-pager visible?',w:2},
         {id:'TM_6',q:'New-launch learning material posted?',w:1},
         {id:'TM_7',q:'COFFEE & HD Playbook in store?',w:1},
-        {id:'TM_8',q:'MSDS & Shelf life chart displayed?',w:1},
+        {id:'TM_8',q:'MSDS, chemical chart and Shelf life chart available?',w:1},
         {id:'TM_9',q:'Career Progression Chart & Reward Poster displayed?',w:1}
       ]},
       { id:'LMS', title:'LMS Usage', items:[
-        {id:'LMS_1',q:'Orientation & Induction completed within 3 days of joining?',w:4},
-        {id:'LMS_2',q:'All assessments & knowledge checks on LMS?',w:4},
-        {id:'LMS_3',q:'Team uses LMS for new info & comms?',w:2}
+        {id:'LMS_1',q:'Orientation & Induction completed within 3 days of joining?',w:4, wneg:-4},
+        {id:'LMS_2',q:'All assessments & knowledge checks on LMS?',w:4, wneg:-4},
+        {id:'LMS_3',q:'Team uses LMS for new information & comms?',w:2}
       ]},
       { id:'Buddy', title:'Buddy Trainer Availability & Capability', items:[
-        {id:'Buddy_1',q:'≥2 certified Buddy Trainers?',w:2},
-        {id:'Buddy_2',q:'Buddy Trainers passed skill checks?',w:2},
-        {id:'Buddy_3',q:'Trainees rostered with Buddies?',w:1},
-        {id:'Buddy_4',q:'Buddy Trainers attended workshop?',w:2},
-        {id:'Buddy_5',q:'Explain 4-step training process?',w:2},
-        {id:'Buddy_6',q:'Navigate LMS flawlessly?',w:1}
+        {id:'Buddy_1',q:'Does the café have at least 2 certified Buddy Trainers?',w:2},
+        {id:'Buddy_2',q:'Have Buddy Trainers completed their Skill Check?',w:2},
+        {id:'Buddy_3',q:'Are trainees rostered with Buddy Trainers and working in the same shift?',w:1},
+        {id:'Buddy_4',q:'Have Buddy Trainers attended the BT workshop?',w:2},
+        {id:'Buddy_5',q:'Can Buddy Trainers explain the 4-step training process effectively?',w:2},
+        {id:'Buddy_6',q:'Can Buddy Trainers navigate Zing LMS flawlessly?',w:1}
       ]},
       { id:'NewJoiner', title:'New Joiner Training & Records', items:[
-        {id:'NJ_1',q:'OJT book available for all partners?',w:1},
-        {id:'NJ_2',q:'Trainees completing skill checks?',w:1},
-        {id:'NJ_3',q:'Training aligned with plan?',w:1},
-        {id:'NJ_4',q:'Aware of progressions?',w:1},
-        {id:'NJ_5',q:'Managers completed SHLP training?',w:2},
-        {id:'NJ_6',q:'≥2 FOSTAC-certified managers?',w:2},
-        {id:'NJ_7',q:'ASM/SM training completed?',w:2}
+        {id:'NJ_1',q:'Is the OJT book available for all partners?',w:1},
+        {id:'NJ_2',q:'Are trainees referring to the OJT book and completing their skill checks?',w:1},
+        {id:'NJ_3',q:'Is training progression aligned with the Training Calendar/Plan?',w:1},
+        {id:'NJ_4',q:'Are team members aware of post-barista training progressions?',w:1},
+        {id:'NJ_5',q:'Have managers completed SHLP training as per the calendar?',w:2},
+        {id:'NJ_6',q:'Are there at least 2 FOSTAC-certified managers in the store?',w:2},
+        {id:'NJ_7',q:'Is ASM/SM training completed as per the Training Calendar?',w:2}
       ]},
       { id:'PartnerKnowledge', title:'Partner Knowledge', items:[
-        {id:'PK_1',q:'Aware of company communications?',w:2},
-        {id:'PK_2',q:'Conduct Coffee Tasting & Sampling?',w:2},
-        {id:'PK_3',q:'Sampling per guidelines?',w:2},
-        {id:'PK_4',q:'Tasting engaging?',w:2},
-        {id:'PK_5',q:'Aware of manual brew standards?',w:2},
-        {id:'PK_6',q:'Partners follow grooming standards?',w:2},
-        {id:'PK_7',q:'Pop-quiz key topics passed?',w:3}
+        {id:'PK_1',q:'Are team members aware of current company communications?',w:2},
+        {id:'PK_2',q:'Ask a team member to conduct a Coffee Tasting & Sampling',w:2},
+        {id:'PK_3',q:'Is Sampling being conducted as per the set guidelines?',w:2},
+        {id:'PK_4',q:'Is Coffee Tasting engaging and effective?',w:2},
+        {id:'PK_5',q:'Are team members aware of manual brewing methods and standards?',w:2},
+        {id:'PK_6',q:'Are partners following grooming standards?',w:2},
+        {id:'PK_7',q:'Pop-quiz key topics passed?',w:3, wneg:-3}
       ]},
       { id:'TSA', title:'TSA - Training Skill Assessment', items:[
-        {id:'TSA_1',q:'Hot & Cold stations work?',w:10},
-        {id:'TSA_2',q:'Food station cleanliness?',w:10},
-        {id:'TSA_3',q:'Customer Service quality?',w:10}
+        {id:'TSA_1',q:'Partner 1 – Hot & Cold stations work?',w:10},
+        {id:'TSA_2',q:'Partner 2 – Food station cleanliness?',w:10},
+        {id:'TSA_3',q:'Partner 3 – Customer Service quality?',w:10}
       ]},
       { id:'CustomerExperience', title:'Customer Experience', items:[
-        {id:'CX_1',q:'Music at proper volume?',w:1},
-        {id:'CX_2',q:'Temperature comfortable?',w:1},
-        {id:'CX_3',q:'Washrooms clean?',w:1},
-        {id:'CX_4',q:'Wi-Fi working?',w:1},
-        {id:'CX_5',q:'VM displays correct?',w:2},
-        {id:'CX_6',q:'Furniture well-kept?',w:1},
-        {id:'CX_7',q:'Understanding MA/CPI/QA?',w:1},
-        {id:'CX_8',q:'Latest Mystery Audit score?',w:1},
-        {id:'CX_9',q:'Top 2 CX opps last month?',w:1}
+        {id:'CX_1',q:'Is background music at appropriate volume?',w:1},
+        {id:'CX_2',q:'Is store temperature comfortable?',w:1},
+        {id:'CX_3',q:'Are washrooms clean and well-maintained?',w:1},
+        {id:'CX_4',q:'Is Wi-Fi available & functioning?',w:1},
+        {id:'CX_5',q:'Are marketing & VM displays correct?',w:2},
+        {id:'CX_6',q:'Is store furniture clean & well-kept?',w:1},
+        {id:'CX_7',q:'What do you understand by MA, CPI, QA scores?',w:1},
+        {id:'CX_8',q:'What was the latest Mystery Audit score for the store?',w:1},
+        {id:'CX_9',q:'Top 2 CX opportunity areas last month?',w:1}
       ]},
       { id:'ActionPlan', title:'Action Plan & Continuous Improvement', items:[
-        {id:'AP_1',q:'Concerns addressed within 48hrs?',w:1},
+        {id:'AP_1',q:'Concerns addressed within 48hrs?',w:1, wneg:-1},
         {id:'AP_2',q:'Action points closed/work-in-progress?',w:2},
         {id:'AP_3',q:'Managers aware of action plan?',w:2}
       ]}
     ];
-
-    const vibrate = pattern => { if (navigator.vibrate) navigator.vibrate(pattern); };
+    const optionColors = { yes:'green', no:'red', na:'yellow' };
+    const options = Object.entries(optionColors);
 
     function App() {
-      const [resp, setResp] = useState(() => JSON.parse(localStorage.getItem('resp') || '{}'));
-      const [storeName, setStoreName] = useState(localStorage.getItem('storeName') || '');
-      const [storeId, setStoreId] = useState(localStorage.getItem('storeId') || '');
-      const [imgs, setImgs] = useState(() => JSON.parse(localStorage.getItem('imgs') || '{}'));
+      const [resp, setResp] = React.useState(() => JSON.parse(localStorage.getItem('resp') || '{}'));
+      const [storeName, setStoreName] = React.useState(localStorage.getItem('storeName') || '');
+      const [storeId, setStoreId] = React.useState(localStorage.getItem('storeId') || '');
+      const [imgs, setImgs] = React.useState(() => JSON.parse(localStorage.getItem('imgs') || '{}'));
 
-      useEffect(() => {
+      // Haptics
+      const zap = (n) => safeVibrate(Array(n).fill([80,80]).flat());
+      const buzz = (n) => safeVibrate(Array(n).fill(120).flat());
+
+      React.useEffect(() => {
         const save = () => {
           localStorage.setItem('resp', JSON.stringify(resp));
           localStorage.setItem('storeName', storeName);
@@ -109,145 +129,266 @@
         return () => window.removeEventListener('beforeunload', save);
       }, [resp, storeName, storeId, imgs]);
 
+      // All questions answered
+      const allDone = storeName.trim() && storeId.trim() && SECTIONS.every(sec =>
+        sec.items.every(it => resp[sec.id + '_' + it.id] != null)
+      );
+
       const handleOption = (sec, it, val) => {
-        if (val === 'yes') vibrate(75);
-        else if (val === 'no') vibrate([75,50,75]);
-        setResp(r => ({ ...r, [sec + '_' + it]: val }));
+        setResp(p => ({ ...p, [sec.id + '_' + it.id]: val }));
+        if(val === 'yes') safeVibrate(50);
+        else if(val === 'no') zap(2);
       };
-      const allDone = SECTIONS.every(sec => sec.items.every(it => resp[sec.id + '_' + it.id] != null));
+      const handleTSA = (sec, it, val) => setResp(p => ({ ...p, [sec.id + '_' + it.id]: val }));
+
+      const addImages = (sec, e) => {
+        Array.from(e.target.files).forEach(f => {
+          EXIF.getData(f, function() {
+            const r = new FileReader();
+            r.onload = ev => setImgs(p => ({ ...p, [sec.id]: [...(p[sec.id] || []), ev.target.result] }));
+            r.readAsDataURL(f);
+          });
+        });
+        e.target.value = null;
+      };
+
+      const handleNewResponse = () => {
+        localStorage.clear();
+        setResp({});
+        setStoreName('');
+        setStoreId('');
+        setImgs({});
+        buzz(2);
+      };
+
+      const scrollTo = id => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
 
       const handleSubmit = e => {
         e.preventDefault();
-        if (!storeName.trim() || !storeId.trim() || !allDone) {
-          vibrate([200,100,200]);
-          return;
-        }
-        vibrate(150);
-        let total=0, max=0;
-        SECTIONS.forEach(sec => sec.items.forEach(it => { const key=sec.id+'_'+it.id, r=resp[key]; if(sec.id==='TSA'){const v=parseInt(r)||0; total+=v; max+=it.w;}else{if(r==='yes') total+=it.w; if(r!=='na') max+=it.w;} }));
-        const pct = max?Math.round(total/max*100):0;
-        const { jsPDF }=window.jspdf; const doc=new jsPDF({orientation:'portrait'});
-        const pageW = doc.internal.pageSize.getWidth();
-        const pageH = doc.internal.pageSize.getHeight();
-
-        // Header
-        doc.setFontSize(18).setFont('helvetica','bold').setTextColor(0,0,0);
-        doc.text('Training Audit | Third wave coffee', pageW/2, 15, {align:'center'});
-        doc.setFontSize(12).setFont('helvetica','normal');
-        doc.text(`Auditor: ${auditorName} (ID: ${auditorId})`, 12, 25);
-        doc.text(`Store: ${storeName} (ID: ${storeId})`, 12, 31);
-        doc.setFontSize(13).setFont('helvetica','bold');
-        doc.text(`Overall Score: ${total}/${max}`, 12, 39);
-        doc.text(`Percentage: ${pct}%`, 65, 39);
-
-        let y = 45;
+        if (!allDone) { zap(2); return; }
+        // Compute score (negative, omit NA)
+        let total = 0, max = 0, yes=0, no=0, na=0;
+        let sectionScores = {};
         SECTIONS.forEach(sec => {
-          // PRE-CALCULATE: Estimate height needed for table+images for section
-          const rows = sec.items.map(it => {
+          let sectionTotal = 0, sectionMax = 0;
+          sec.items.forEach(it => {
             const key = sec.id + '_' + it.id;
             const r = resp[key];
-            const sc = sec.id === 'TSA' ? parseInt(r)||0 : (r === 'yes' ? it.w : 0);
-            return [it.q, (r || '').toUpperCase(), sc.toString()];
+            if(sec.id==='TSA'){
+              const v = parseInt(r)||0;
+              sectionTotal += v; total += v; sectionMax += it.w; max += it.w;
+              if(v === 10) yes++; else if(v === 0) no++; else na++;
+            }
+            else{
+              if(r==='yes'){ sectionTotal += it.w; total += it.w; yes++; }
+              else if(r==='no' && it.wneg){ sectionTotal += it.wneg; total += it.wneg; no++; }
+              else if(r==='no'){ no++; }
+              else if(r==='na'){ na++; }
+              if(r!=='na'){ sectionMax += Math.abs(it.w); max += Math.abs(it.w); }
+            }
           });
-          let estTableH = 8 + (rows.length * 7);
-          let estImgH = (imgs[sec.id]||[]).length ? Math.ceil((imgs[sec.id].length/6)) * 18 + 6 : 0;
-          let boxH = 18 + estTableH + estImgH + 2;
-          // If section would spill, start new page
-          if (y + boxH > pageH - 15) { doc.addPage(); y = 15; }
+          sectionScores[sec.title] = { total: sectionTotal, max: sectionMax };
+        });
+        const pct = max ? Math.round((total / max) * 100) : 0;
 
-          // Pastel section box
-          const boxX = 10, boxW = pageW - 20;
-          doc.setFillColor(235,245,255); // Pastel blue
-          doc.roundedRect(boxX, y, boxW, boxH, 5, 5, 'F');
-          doc.setDrawColor(130,170,240);
-          doc.roundedRect(boxX, y, boxW, boxH, 5, 5);
-
-          // Section Title centered inside box
-          doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(25,25,25);
-          doc.text(sec.title, boxX + boxW/2, y + 10, { align: 'center', baseline:'middle' });
-
-          // Table in box, below title (with dark font for headings)
-          const tableY = y + 15;
-          doc.autoTable({
-            startY: tableY,
-            margin: { left: boxX+2, right: boxX+2 },
-            tableWidth: boxW-4,
-            head: [['Question','Response','Score']],
-            body: rows,
-            theme: 'grid',
-            styles: { fontSize:8, textColor:[30,30,30], cellPadding:2 },
-            headStyles: { fillColor:[200,220,245], textColor:[30,30,30], fontStyle:'bold', fontSize:9 },
-            bodyStyles: { fillColor:[255,255,255] },
-            pageBreak: 'avoid'
+        // Pie chart: Yes/No/NA
+        const drawPie = (ctx, data, colors, center, radius) => {
+          let totalV = data.reduce((a,b) => a+b,0);
+          let start = 0;
+          data.forEach((val, i) => {
+            const end = start + (val/totalV)*2*Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(...center);
+            ctx.arc(center[0], center[1], radius, start, end);
+            ctx.closePath();
+            ctx.fillStyle = colors[i];
+            ctx.fill();
+            start = end;
           });
-          let tableH = doc.lastAutoTable.finalY - tableY;
+        };
 
-          // Images inside box, under table
-          let imgY = tableY + tableH + 3;
-          let imgX = boxX + 3;
-          if ((imgs[sec.id]||[]).length > 0) {
-            (imgs[sec.id]||[]).forEach((src, i) => {
-              if (imgX > boxX + boxW - 20) { imgX = boxX + 3; imgY += 18; }
-              doc.addImage(src, 'JPEG', imgX, imgY, 15, 15, undefined, 'FAST');
-              imgX += 17;
-            });
-          }
-          y += boxH + 7;
+        // Pie chart: Section Scores
+        const sectionTitles = Object.keys(sectionScores);
+        const sectionVals = Object.values(sectionScores).map(s=>Math.max(s.total,0));
+        const sectionColors = [
+          '#A3CEF1','#B6E2D3','#F6D6AD','#D8C7FF','#B6D9F2','#F6A3A3','#E4D1B9','#F8B7D4'
+        ];
+        // PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+        // Draw pies in a canvas, then to image
+        const pieCanvas = document.createElement('canvas');
+        pieCanvas.width = 500; pieCanvas.height = 160;
+        const ctx = pieCanvas.getContext('2d');
+        // Pie 1: Yes/No/NA
+        drawPie(ctx, [yes,no,na], ['#94d82d','#ff758f','#ffe066'], [80,80], 60);
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillStyle = '#222'; ctx.fillText('Yes',30,150); ctx.fillText('No',95,150); ctx.fillText('NA',160,150);
+        // Pie 2: Section Scores
+        let xOff = 300, pieR = 60;
+        drawPie(ctx, sectionVals, sectionColors, [xOff,80], pieR);
+        ctx.font = 'bold 12px sans-serif';
+        sectionTitles.forEach((t,i)=>{
+          ctx.fillStyle = sectionColors[i];
+          ctx.fillRect(xOff+80,30+i*20,15,15);
+          ctx.fillStyle = '#222';
+          ctx.fillText(t, xOff+100, 43+i*20);
         });
 
-        // Download
-        const url = doc.output('bloburl');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `audit_${storeName}_${Date.now()}.pdf`;
-        a.click();
+        // Report header
+        doc.setFontSize(18); doc.setFont('helvetica','bold');
+        doc.text('Training Audit | Third wave coffee', 297, 45, {align:'center'});
+        doc.setFontSize(12); doc.setFont('helvetica','normal');
+        doc.text(`Date: ${new Date().toLocaleString()}`, 35, 70);
+        doc.text(`Auditor: ${auditorName} (${auditorId})`, 35, 85);
+        doc.text(`Store: ${storeName} (${storeId})`, 35, 100);
+        doc.setFontSize(18); doc.setTextColor(30,30,30);
+        doc.text(`Score: ${total} / ${max}  (${pct}%)`, 430, 75, {align:'center'});
+        // Insert pies
+        doc.addImage(pieCanvas.toDataURL('image/png'),'PNG', 297, 85, 250, 120);
+
+        // Section tables, colored boxes
+        let y = 230;
+        SECTIONS.forEach((sec, i) => {
+          if(y>700) { doc.addPage(); y=40; }
+          // Pastel box
+          doc.setFillColor(...hexToRgb(sectionColors[i%sectionColors.length]), 0.15);
+          doc.roundedRect(30, y-10, 540, 50 + sec.items.length*22 + 40, 10, 10, 'F');
+          doc.setTextColor(30,30,30);
+          doc.setFont('helvetica','bold'); doc.setFontSize(15);
+          doc.text(sec.title, 300, y+8, {align:'center', baseline:'middle'});
+          doc.setFont('helvetica','normal'); doc.setFontSize(12);
+          doc.text(`Section Score: ${sectionScores[sec.title].total} / ${sectionScores[sec.title].max}`, 500, y+8, {align:'right'});
+          // Table
+          let tableRows = sec.items.map(it => {
+            const key = sec.id + '_' + it.id;
+            const r = resp[key];
+            const respText = sec.id === 'TSA' ? (r||'') : (r === 'yes' ? 'Yes' : r === 'no' ? 'No' : r === 'na' ? 'NA' : r);
+            const score = sec.id === 'TSA' ? (parseInt(r)||0) : (r==='yes'?it.w:r==='no'&&it.wneg?it.wneg:0);
+            return [it.q, respText, score.toString()];
+          });
+          doc.autoTable({
+            startY: y+20,
+            margin: { left: 40, right: 40 },
+            head: [['Question','Response','Score']],
+            body: tableRows,
+            styles: { fontSize: 10, textColor: [20,20,20], lineColor: [120,120,120] },
+            headStyles: { fillColor: [30,30,30], textColor: [255,255,255], fontStyle:'bold', fontSize:11 },
+            tableWidth: 500,
+            theme: 'grid',
+          });
+          y = doc.lastAutoTable.finalY + 30;
+          // Section images
+          if(imgs[sec.id]) {
+            imgs[sec.id].forEach((src,i2)=>{
+              if(y>700) { doc.addPage(); y=40; }
+              doc.addImage(src, 'JPEG', 420, y, 70, 70);
+              y += 75;
+            });
+          }
+        });
+        doc.save(`audit_${storeName}_${Date.now()}.pdf`);
+        buzz(1);
       };
 
+      function hexToRgb(hex, alpha) {
+        const h = hex.replace('#','');
+        const r = parseInt(h.substring(0,2),16);
+        const g = parseInt(h.substring(2,4),16);
+        const b = parseInt(h.substring(4,6),16);
+        return [r,g,b, alpha];
+      }
+
+      // UI
       return (
-        <form onSubmit={handleSubmit} className="p-6 bg-white shadow rounded fade-in mx-auto max-w-4xl space-y-6">
-          <h1 className="text-2xl font-bold text-center">Training Audit | Third wave coffee</h1>
+        <form onSubmit={handleSubmit} className="space-y-6 p-4 sm:p-8 bg-white rounded-lg shadow fade-in">
+          <h1 className="text-2xl font-bold text-center mb-2">Training Audit | Third wave coffee</h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div><label className="block text-sm">Auditor Name</label><input readOnly value={auditorName} className="w-full p-2 border rounded bg-gray-100"/></div>
-            <div><label className="block text-sm">Auditor ID</label><input readOnly value={auditorId} className="w-full p-2 border rounded bg-gray-100"/></div>
-            <div><label className="block text-sm">Store Name</label><input value={storeName} onChange={e=>setStoreName(e.target.value)} className="w-full p-2 border rounded"/></div>
-            <div><label className="block text-sm">Store ID</label><input value={storeId} onChange={e=>setStoreId(e.target.value)} className="w-full p-2 border rounded"/></div>
+            <div>
+              <label className="block text-sm">Auditor Name</label>
+              <input readOnly value={auditorName} className="w-full p-2 border rounded bg-gray-100"/>
+            </div>
+            <div>
+              <label className="block text-sm">Auditor ID</label>
+              <input readOnly value={auditorId} className="w-full p-2 border rounded bg-gray-100"/>
+            </div>
+            <div>
+              <label htmlFor="storeName" className="block text-sm">Store Name</label>
+              <input id="storeName" value={storeName} onChange={e=>setStoreName(e.target.value)} className="w-full p-2 border rounded"/>
+            </div>
+            <div>
+              <label htmlFor="storeId" className="block text-sm">Store ID</label>
+              <input id="storeId" value={storeId} onChange={e=>setStoreId(e.target.value)} className="w-full p-2 border rounded"/>
+            </div>
           </div>
           {SECTIONS.map(sec=>(
-            <section key={sec.id} className="mb-6">
+            <div key={sec.id} id={sec.id+'-section'} className="mb-6 fade-in">
               <h2 className="text-lg font-semibold border-b pb-1">{sec.title}</h2>
               <table className="w-full border-collapse mt-2">
-                <thead><tr className="bg-gray-100"><th className="border px-2 py-1 text-left">Question</th>
-                  {(sec.id==='TSA'? [10,5,0]: ['Yes','No','NA']).map(o=><th key={o} className="border px-2 py-1 text-center uppercase text-xs">{o}</th>)}
-                </tr></thead>
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border px-2 py-1 text-left">Question</th>
+                    {sec.id==='TSA'
+                      ? [10,5,0].map(val=><th key={val} className="border px-2 py-1 text-center text-xs">{val}</th>)
+                      : options.map(([opt])=><th key={opt} className="border px-2 py-1 text-center text-xs uppercase">{opt}</th>)}
+                  </tr>
+                </thead>
                 <tbody>
-                  {sec.items.map(it=>{const key=sec.id+'_'+it.id;return(
-                    <tr key={key} id={key} className="even:bg-gray-50 hover:bg-gray-50">
-                      <td className="border px-2 py-1">{it.q}</td>
-                      {(sec.id==='TSA'? [10,5,0]: ['yes','no','na']).map(val=>{const sel=resp[key]===String(val)||resp[key]===val;const color=sec.id==='TSA'?'blue':val==='yes'?'green':val==='no'?'red':'yellow';return(
-                        <td key={val} className="border px-2 py-1 text-center">
-                          <button type="button" onClick={()=>handleOption(sec.id,it.id,String(val))}
-                            className={`px-2 py-0.5 text-xs rounded-full transition ${sel?`bg-${color}-200 ring-2 ring-${color}-500`:`bg-${color}-100`} hover:bg-${color}-300`}>{String(val).toUpperCase()}</button>
-                        </td>
-                      );})}
-                    </tr>);
+                  {sec.items.map(it=>{
+                    const key=sec.id+'_'+it.id;
+                    return (
+                      <tr id={key} key={it.id} className="even:bg-gray-50 hover:bg-gray-50">
+                        <td className="border px-2 py-1">{it.q}</td>
+                        {sec.id==='TSA'
+                          ? [10,5,0].map(val=>{
+                              const sel=resp[key]===String(val);
+                              return (
+                                <td key={val} className="border px-2 py-1 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={()=>handleTSA(sec,it.id,String(val))}
+                                    className={`${sel?'bg-blue-200 ring-2 ring-blue-500':'bg-gray-200'} hover:bg-blue-300 px-2 py-0.5 text-xs rounded-full transition`}
+                                  >{val}</button>
+                                </td>
+                              );
+                            })
+                          : options.map(([opt,color])=>{
+                              const sel=resp[key]===opt;
+                              return (
+                                <td key={opt} className="border px-2 py-1 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={()=>handleOption(sec,it,opt)}
+                                    className={`${sel?`bg-${color}-200 ring-2 ring-${color}-500`:`bg-${color}-100`} hover:bg-${color}-300 px-2 py-0.5 text-xs rounded-full transition`}
+                                  >{opt.toUpperCase()}</button>
+                                </td>
+                              );
+                            })}
+                      </tr>
+                    );
                   })}
                 </tbody>
               </table>
-              <div className="mt-4">
+              <div className="mt-4 fade-in">
                 <label className="block text-sm">Upload Images</label>
-                <input type="file" accept="image/*" capture="environment" multiple onChange={e=>{Array.from(e.target.files).forEach(f=>{EXIF.getData(f,function(){const r=new FileReader();r.onload=ev=>setImgs(i=>({...i,[sec.id]:[...(i[sec.id]||[]),ev.target.result]}));r.readAsDataURL(f);});});e.target.value=null;}} className="mt-1"/>
-                <div className="flex space-x-2 mt-2 overflow-auto">{(imgs[sec.id]||[]).map((s,i)=><img key={i} src={s} className="w-16 h-16 object-cover rounded border"/>)} </div>
+                <input type="file" accept="image/*" capture="environment" multiple onChange={e=>addImages(sec,e)} className="mt-1"/>
+                <div className="flex space-x-2 mt-2 overflow-x-auto">
+                  {(imgs[sec.id]||[]).map((s,i)=><img key={i} src={s} className="w-16 h-16 object-cover rounded-md border"/>) }
+                </div>
               </div>
-            </section>
+            </div>
           ))}
-          <div className="flex gap-4">
-            <button type="button" onClick={()=>{vibrate(75);localStorage.clear();setResp({});setStoreName('');setStoreId('');setImgs({});}} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200">New Response</button>
-            <button type="submit" disabled={!allDone} className="flex-1 bg-green-100 py-3 rounded-full hover:bg-green-200">Submit & Download PDF</button>
+          <div className="flex space-x-4 fade-in">
+            <button type="button" onClick={handleNewResponse} className="flex-1 bg-blue-100 py-3 rounded-full hover:bg-blue-200 transition">New Response</button>
+            <button type="submit" disabled={!allDone} className={`flex-1 py-3 rounded-full transition ${allDone?'bg-green-100 hover:bg-green-200':'bg-gray-200 cursor-not-allowed'}`}>Submit & Download PDF</button>
           </div>
         </form>
       );
     }
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   </script>
 </body>
 </html>
