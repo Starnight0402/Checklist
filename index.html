@@ -155,22 +155,44 @@
         doc.text('Training Audit | Third wave coffee', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
         doc.setFontSize(12);
         doc.text(`Store: ${storeName} (ID: ${storeId})`, doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
-        // Build table data
-        const rows = [];
+                // Generate section-wise tables with images
+        let y = 35;
         SECTIONS.forEach(sec => {
-          sec.items.forEach(it => {
+          doc.setFontSize(14);
+          doc.text(sec.title, 20, y);
+          y += 8;
+          // Table for this section
+          const rows = sec.items.map(it => {
             const key = `${sec.id}_${it.id}`;
             const r = resp[key];
-            const respText = r === 'yes' ? 'Yes' : r === 'no' ? 'No' : r === 'na' ? 'NA' : r;
-            rows.push([sec.title, it.q, it.w, respText]);
+            const respText = (r === 'yes' ? 'Yes' : r === 'no' ? 'No' : r === 'na' ? 'NA' : r);
+            return [it.q, it.w.toString(), respText];
           });
-        });
-        doc.autoTable({
-          head: [['Section', 'Question', 'Weight', 'Response']],
-          body: rows,
-          startY: 35,
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [220, 220, 220] }
+          doc.autoTable({
+            head: [['Question', 'Weight', 'Response']],
+            body: rows,
+            startY: y,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [220, 220, 220] }
+          });
+          y = doc.lastAutoTable.finalY + 4;
+          // Images for this section
+          if (imgs[sec.id]) {
+            imgs[sec.id].forEach((src, i) => {
+              if (y > doc.internal.pageSize.getHeight() - 40) {
+                doc.addPage();
+                y = 20;
+              }
+              doc.addImage(src, 'JPEG', 20, y, 30, 30);
+              y += 34;
+            });
+          }
+          // Add a bit of space before next section
+          y += 6;
+          if (y > doc.internal.pageSize.getHeight() - 40) {
+            doc.addPage();
+            y = 20;
+          }
         });
         doc.save(`audit_${storeName}_${Date.now()}.pdf`);
       };
