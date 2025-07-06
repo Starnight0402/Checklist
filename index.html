@@ -144,9 +144,9 @@
           {SECTIONS.map(sec=>(
             <div key={sec.id} className="mb-6" id={`${sec.id}-section`}>
               <div className="px-4 py-2 border-b"><h2 className="text-lg font-semibold">{sec.title}</h2></div>
-              <div className="p-4 overflow-x-auto">
+              <div className="p-4 ">
                 <table className="min-w-full border-collapse">
-                  <thead><tr className="bg-gray-100"><th className="border px-4 py-3 text-left whitespace-nowrap">Question</th>
+                  <thead><tr className="bg-gray-100"><th className="border px-2 py-1 text-left">Question</th>
                     {sec.id==='TSA'
                       ? [10,5,0].map(val=><th key={val} className="border px-2 py-1 text-center text-xs">{val}</th>)
                       : options.map(([opt])=><th key={opt} className="border px-2 py-1 text-center text-xs uppercase">{opt}</th>)}
@@ -156,7 +156,7 @@
                       const key=`${sec.id}_${it.id}`;
                       return(
                         <tr id={key} key={it.id} className="even:bg-gray-50 hover:bg-gray-50">
-                          <td className="border px-4 py-3 whitespace-nowrap">{it.q}</td>
+                          <td className="border px-2 py-1">{it.q}</td>
                           {sec.id==='TSA'
                             ? [10,5,0].map(val=>{ const sel=resp[key]===String(val); return (<td key={val} className="border px-2 py-1 text-center"><button type="button" onClick={()=>handleTSA(sec.id,it.id,String(val))} className={`${sel?'bg-blue-200 ring-2 ring-blue-500':'bg-gray-200'} hover:bg-blue-300 px-2 py-0.5 text-xs rounded-full transition`}>{val}</button></td>); })
                             : options.map(([opt,color])=>{ const sel=resp[key]===opt; return (<td key={opt} className="border px-2 py-1 text-center"><button type="button" onClick={()=>handleOption(sec.id,it.id,opt)} className={`${sel?`bg-${color}-200 ring-2 ring-${color}-500`:`bg-${color}-100`} hover:bg-${color}-300 px-2 py-0.5 text-xs rounded-full transition`}>{opt.toUpperCase()}</button></td>); })}
