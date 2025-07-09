@@ -200,7 +200,8 @@ const sectionBg = [
         // HEADER
         doc.setFillColor('#F7F8FA'); doc.rect(10,10,190,20,'F');
         doc.setFontSize(19); doc.setFont('helvetica','bold');
-        doc.setTextColor('#263140'); doc.text('Training Audit | ${storeName}', 105, 19, {align:'center'});
+        doc.setTextColor('#263140'); 
+        doc.text(`Training Audit | ${storeName}`, 105, 19, {align:'center'});
         doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor('#24272e');
         doc.text(`Date/Time: ${completion}`,10,28);
         doc.text(`Auditor: ${auditorName} (ID: ${auditorId})`,65,28);
