@@ -205,9 +205,9 @@ const sectionBg = [
         doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor('#24272e');
         doc.text(`Date/Time: ${completion}  |`,10,28);
         doc.text(` Auditor: ${auditorName}  |`,65,28);
-        doc.text(` StoreID: ${storeId}  |`,110,28);
+        doc.text(` StoreID: ${storeId}  |`,115,28);
         doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.setTextColor('#086972');
-        doc.text(` Score: ${total} / ${max} | ${pct}% `,190, 28, {align:'right'});
+        doc.text(` Score: ${total} / ${max} | ${pct}% `,200, 28, {align:'right'});
 
         let y = 40;
         for(let s=0;s<SECTIONS.length;s++){
