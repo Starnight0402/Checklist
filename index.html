@@ -202,11 +202,11 @@ const sectionBg = [
         doc.setFontSize(19); doc.setFont('helvetica','bold');
         doc.setTextColor('#263140'); doc.text('Training Audit | Third wave coffee', 105, 21, {align:'center'});
         doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor('#24272e');
-        doc.text(`Date/Time: ${completion}`,12,28);
-        doc.text(`Auditor: ${auditorName} (ID: ${auditorId})`,60,28);
+        doc.text(`Date/Time: ${completion}`,10,28);
+        doc.text(`Auditor: ${auditorName} (ID: ${auditorId})`,80,28);
         doc.text(`Store: ${storeName} (ID: ${storeId})`,135,28);
         doc.setFontSize(14); doc.setTextColor('#086972');
-        doc.text(`Score: ${total} / ${max}   |   ${pct}%`, 170, 21, {align:'right'});
+        doc.text(`Score: ${total} / ${max}   |   ${pct}%`, 180, 28, {align:'right'});
 
         let y = 36;
         for(let s=0;s<SECTIONS.length;s++){
@@ -257,7 +257,7 @@ const sectionBg = [
   doc.setLineWidth(1.1);
   doc.roundedRect(13, y, 184, boxH, 9, 9);
   y = nextY+8;
-  if(y>250 && s!==SECTIONS.length-1){ doc.addPage(); y=20;}
+  if(y>220 && s!==SECTIONS.length-1){ doc.addPage(); y=20;}
 }
 doc.save(`audit_${storeName}_${Date.now()}.pdf`);
       };
