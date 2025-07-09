@@ -199,14 +199,14 @@ const sectionBg = [
 ];
         // HEADER
         doc.setFillColor('#FFFFFF'); doc.rect(10,10,190,20,'F');
-        doc.setFontSize(19); doc.setFont('helvetica','bold');
+        doc.setFontSize(20); doc.setFont('helvetica','bold');
         doc.setTextColor('#263140'); 
         doc.text(`Training Audit | ${storeName}`, 105, 19, {align:'center'});
         doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor('#24272e');
         doc.text(`Date/Time: ${completion}  |`,10,28);
         doc.text(` Auditor: ${auditorName}  |`,65,28);
         doc.text(`StoreID: ${storeId}  |`,115,28);
-        doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.setTextColor('#086972');
+        doc.setFontSize(18); doc.setFont('helvetica','bold'); doc.setTextColor('#086972');
         doc.text(`Score: ${total} / ${max} | ${pct}% `,200, 28, {align:'right'});
 
         let y = 40;
