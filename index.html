@@ -292,13 +292,21 @@
           // IMAGES (below remarks, still in section box)
           let imgH = 0;
           if(imgs[sec.id] && imgs[sec.id].length){
-            imgs[sec.id].forEach((src, i)=>{
-              if(nextY>265){ doc.addPage(); nextY=20;}
-              doc.addImage(src,'JPEG',18+30*i,nextY,24,24);
-              imgH = Math.max(imgH, 26);
-            });
-            nextY += imgH+2;
-          }
+  let imgPerRow = 6;
+  let imgW = 24, imgH = 24, gap = 6;
+  let baseX = 18, baseY = nextY;
+  imgs[sec.id].forEach((src, i)=>{
+    let row = Math.floor(i / imgPerRow);
+    let col = i % imgPerRow;
+    let x = baseX + col * (imgW + gap);
+    let y = baseY + row * (imgH + gap);
+    if(y > 265){ doc.addPage(); baseY = 20; y = baseY; }
+    doc.addImage(src,'JPEG', x, y, imgW, imgH);
+    imgH = Math.max(imgH, 24);
+  });
+  let rows = Math.ceil(imgs[sec.id].length / imgPerRow);
+  nextY = baseY + rows * (imgH + gap) + 2;
+}
           // Now draw the box *after* knowing full height
           const boxH = nextY-y+3;
           doc.setDrawColor('#b5bfc7');
