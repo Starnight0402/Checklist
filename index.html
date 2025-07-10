@@ -10,9 +10,6 @@
   <meta property="og:title" content="Training Audit | Third wave coffee" />
   <meta property="og:description" content="Audit checklist for training at Third Wave Coffee." />
   <meta property="og:type" content="website" />
-  <!-- Optional: Manifest for PWA (add manifest.json if using PWA features) -->
-  <!-- <link rel="manifest" href="/manifest.json"> -->
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -146,10 +143,17 @@
       const [storeName,setStoreName]=useState(safeLS.get('storeName')||'');
       const [storeId,setStoreId]=useState(safeLS.get('storeId')||'');
       const [imgs,setImgs]=useState(()=>JSON.parse(safeLS.get('imgs')||'{}'));
+      const [remarks, setRemarks] = useState(() => JSON.parse(safeLS.get('remarks') || '{}')); // REMARKS
       const [downloading,setDownloading]=useState(false);
       const [downloaded, setDownloaded] = useState(false);
 
-      useEffect(()=>{safeLS.set('resp',JSON.stringify(resp));safeLS.set('storeName',storeName);safeLS.set('storeId',storeId);safeLS.set('imgs',JSON.stringify(imgs));},[resp,storeName,storeId,imgs]);
+      useEffect(()=>{
+        safeLS.set('resp',JSON.stringify(resp));
+        safeLS.set('storeName',storeName);
+        safeLS.set('storeId',storeId);
+        safeLS.set('imgs',JSON.stringify(imgs));
+        safeLS.set('remarks', JSON.stringify(remarks)); // REMARKS
+      },[resp,storeName,storeId,imgs,remarks]); // REMARKS
 
       const handleOption=(sec,it,val)=>{
         const key=`${sec.id}_${it.id}`;
@@ -274,7 +278,18 @@
           });
 
           let nextY = doc.lastAutoTable.finalY + 4;
-          // IMAGES (below table, still in section box)
+
+          // REMARKS: Insert remarks below table, above images
+          if (remarks[sec.id] && remarks[sec.id].trim()) {
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(10);
+            doc.setTextColor('#444');
+            let splitRemarks = doc.splitTextToSize('Remarks: ' + remarks[sec.id], 170);
+            doc.text(splitRemarks, 18, nextY);
+            nextY += splitRemarks.length * 6 + 2;
+          }
+
+          // IMAGES (below remarks, still in section box)
           let imgH = 0;
           if(imgs[sec.id] && imgs[sec.id].length){
             imgs[sec.id].forEach((src, i)=>{
@@ -298,7 +313,15 @@
         setTimeout(()=>setDownloaded(false), 3000);
       };
 
-      const resetAll=()=>{safeLS.clear();setResp({});setStoreName('');setStoreId('');setImgs({});safeVibrate([200,200]);};
+      const resetAll=()=>{
+        safeLS.clear();
+        setResp({});
+        setStoreName('');
+        setStoreId('');
+        setImgs({});
+        setRemarks({}); // REMARKS
+        safeVibrate([200,200]);
+      };
 
       // UI
       return(
@@ -380,6 +403,18 @@
                     })}
                   </tbody>
                 </table>
+                {/* REMARKS: Add remarks textarea for each section */}
+                <div className="mt-2 fade-in">
+                  <label className="block text-xs font-semibold">Section Remarks</label>
+                  <textarea
+                    value={remarks[sec.id] || ''}
+                    onChange={e => setRemarks(r => ({ ...r, [sec.id]: e.target.value }))}
+                    className="w-full p-2 border rounded mt-1"
+                    placeholder="Enter remarks for this section (optional)"
+                    rows={2}
+                  />
+                </div>
+                {/* Images */}
                 <div className="mt-2 fade-in">
                   <label className="block text-xs font-semibold">Upload Images</label>
                   <input type="file" accept="image/*" capture="environment" multiple onChange={e=>addImages(sec,e)} className="mt-1"/>
