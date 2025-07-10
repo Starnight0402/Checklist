@@ -313,7 +313,7 @@
           doc.setLineWidth(1.1);
           doc.roundedRect(13, y, 184, boxH, 9, 9);
           y = nextY+8;
-          if(y>220 && s!==SECTIONS.length-1){ doc.addPage(); y=20;}
+          if(y>200 && s!==SECTIONS.length-1){ doc.addPage(); y=20;}
         }
         doc.save(`audit_${storeName}_${Date.now()}.pdf`);
         setDownloading(false);
