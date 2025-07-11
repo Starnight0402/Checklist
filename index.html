@@ -144,6 +144,7 @@
       const [storeId,setStoreId]=useState(safeLS.get('storeId')||'');
       const [imgs,setImgs]=useState(()=>JSON.parse(safeLS.get('imgs')||'{}'));
       const [remarks, setRemarks] = useState(() => JSON.parse(safeLS.get('remarks') || '{}')); // REMARKS
+      const [mod, setMod] = useState(safeLS.get('mod') || '');
       const [downloading,setDownloading]=useState(false);
       const [downloaded, setDownloaded] = useState(false);
       const [showPopup, setShowPopup] = useState(false);
@@ -152,9 +153,10 @@
         safeLS.set('resp',JSON.stringify(resp));
         safeLS.set('storeName',storeName);
         safeLS.set('storeId',storeId);
+        safeLS.set('mod', mod);
         safeLS.set('imgs',JSON.stringify(imgs));
         safeLS.set('remarks', JSON.stringify(remarks)); // REMARKS
-      },[resp,storeName,storeId,imgs,remarks]); // REMARKS
+      },[resp,storeName,storeId,mod,imgs,remarks]); // REMARKS
 
       const handleOption=(sec,it,val)=>{
         const key=`${sec.id}_${it.id}`;
@@ -235,13 +237,28 @@
         doc.setFontSize(10);
         doc.setFont('helvetica','normal');
         doc.setTextColor('#24272e');
-        doc.text(`Date/Time: ${completion}  |`,10,28);
-        doc.text(` Auditor: ${auditorName}  |`,65,28);
-        doc.text(`StoreID: ${storeId}  |`,115,28);
-        doc.setFontSize(17);
-        doc.setFont('helvetica','bold');
-        doc.setTextColor('#086972');
-        doc.text(`Score: ${total} / ${max} | ${pct}% `,202, 28, {align:'right'});
+
+        // PDF HEADER
+const headerFields = [
+  { label: 'Date/Time', value: completion },
+  { label: 'Auditor', value: auditorName },
+  { label: 'Auditor ID', value: auditorId },
+  { label: 'Store ID', value: storeId },
+  { label: 'MOD', value: mod }
+].filter(f => f.value && String(f.value).trim() !== '');
+let headerText = headerFields.map(f => `${f.label}: ${f.value}`).join('  |  ');
+doc.setFontSize(10);
+doc.setFont('helvetica','normal');
+doc.setTextColor('#24272e');
+doc.text(headerText, 105, 28, {align:'center'});
+// Score and Percentage - bold and big
+const scoreText = `Score: ${total} / ${max}`;
+const pctText = `${pct}%`;
+doc.setFontSize(18);
+doc.setFont('helvetica','bold');
+doc.setTextColor('#086972');
+doc.text(scoreText, 18, 38, {align:'left'});
+doc.text(pctText, 202, 38, {align:'right'});
 
         let y = 40;
         for(let s=0;s<SECTIONS.length;s++){
@@ -333,6 +350,7 @@
         setStoreId('');
         setImgs({});
         setRemarks({}); // REMARKS
+        setMod('');
         safeVibrate([200,200]);
       };
 
@@ -346,7 +364,7 @@
           )}
           <form onSubmit={handleSubmit} className="space-y-6 p-3 pt-4 max-w-2xl mx-auto">
             <h1 className="text-xl sm:text-2xl font-bold text-center mb-2">Training Audit | Third wave coffee</h1>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-2">
               <div>
                 <label className="block text-xs font-semibold">Auditor Name</label>
                 <input id="auditorName" readOnly value={auditorName} className="w-full p-2 border rounded bg-gray-100"/>
@@ -362,6 +380,10 @@
               <div>
                 <label className="block text-xs font-semibold">Store ID</label>
                 <input id="storeId" value={storeId} onChange={e=>setStoreId(e.target.value)} required className="w-full p-2 border rounded"/>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold">MOD</label>
+                <input id="mod" value={mod} onChange={e=>setMod(e.target.value)} className="w-full p-2 border rounded"/>
               </div>
             </div>
             {SECTIONS.map(sec=>(
